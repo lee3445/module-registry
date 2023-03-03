@@ -1,0 +1,18 @@
+name: Rust_push
+
+on:
+  push
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Format
+      run: cargo fmt
