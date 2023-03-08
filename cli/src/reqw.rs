@@ -3,7 +3,7 @@ use reqwest::header;
 
 pub fn client(token: &str) -> anyhow::Result<reqwest::Client> {
     let mut headers = header::HeaderMap::new();
-    let t = format!("Bearer {}", std::env::var("GITHUB_TOKEN")?);
+    let t = format!("Bearer {}", token);
     headers.insert(header::AUTHORIZATION, header::HeaderValue::from_str(&t)?);
     headers.insert(
         header::ACCEPT,
@@ -24,7 +24,7 @@ pub fn client(token: &str) -> anyhow::Result<reqwest::Client> {
 async fn graphql(client: &reqwest::Client, query: String) -> reqwest::Result<reqwest::Response> {
     client
         .post("https://api.github.com/graphql")
-        .bearer_auth(format!("{}", std::env::var("GITHUB_TOKEN").unwrap()))
+        // .bearer_auth(format!("{}", std::env::var("GITHUB_TOKEN").unwrap()))
         .body(query)
         .send()
         .await
