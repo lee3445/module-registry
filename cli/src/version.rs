@@ -40,7 +40,7 @@ pub async fn calc_version(client: &reqwest::Client, owner: &str, repo: &str) -> 
     }
 
     if total == 0 {
-        0.0
+        1.0
     } else {
         pinned as f32 / total as f32
     }
