@@ -1,3 +1,0 @@
-[submodule "octocrab"]
-	path = cli/octocrab
-	url = https://github.com/PurdueSoftEng/octocrab.git
