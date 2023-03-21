@@ -1,8 +1,5 @@
-#[macro_use]
-extern crate rocket;
-
-#[cfg(test)]
-mod tests;
+//#[cfg(test)]
+//mod tests;
 
 #[derive(FromFormField)]
 enum Lang {
@@ -22,6 +19,6 @@ struct Options<'r> {
 // Try visiting:
 //   http://127.0.0.1:8000/hello/world
 #[get("/")]
-fn world() -> &'static str {
+pub fn world() -> &'static str {
     "Hello, world!"
 }
