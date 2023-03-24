@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
 cli = { version = "0.1.0", path = "cli" }
-rocket = "0.5.0-rc.2"
+rocket = { version = "0.5.0-rc.2", features = ["json"] }
 tokio = { version = "1.25.0", features = ["macros"] }
