@@ -24,10 +24,14 @@ pub async fn module_db() -> ModuleDB {
 
 #[derive(Default, Debug)]
 pub struct Module {
+    // id of module
     pub id: String,
+    // url to webpage for module
     pub url: String,
+    // file storing contents of module
     pub path: PathBuf,
 
+    // module scores
     pub overall: f64,
     pub bus: f64,
     pub correct: f64,
@@ -113,7 +117,19 @@ mod tests {
         let res = Module::new(
             "postcss".to_string(),
             "https://www.npmjs.com/package/postcss".to_string(),
-        );
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(res.id, "postcss");
+        assert!(res.responsive >= 0.0 && res.responsive <= 1.0);
+    }
+
+    #[rocket::async_test]
+    async fn module_new_bad() {
+        let res = Module::new("no".to_string(), "not a url".to_string()).await;
+
+        assert!(res.is_none());
     }
 
     // test ModuleDB
