@@ -7,3 +7,7 @@
 pub fn world() -> &'static str {
     "Hello, world!"
 }
+#[get("/test")]
+pub fn test() -> &'static str {
+    "Hello, test!"
+}
