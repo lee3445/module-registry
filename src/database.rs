@@ -7,6 +7,7 @@ pub type ModuleDB = RwLock<HashMap<String, Module>>;
 // pub fn module_db() -> ModuleDB {
 //     RwLock::new(HashMap::new())
 // }
+//
 // this one has a default entry
 pub async fn module_db() -> ModuleDB {
     let mut hm = HashMap::new();

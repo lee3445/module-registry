@@ -161,7 +161,6 @@ pub async fn rate(url: &str, token: &str) -> Option<GithubRepo> {
     let ghurl: String;
     if let Some(domain) = u.domain() {
         if domain == "www.npmjs.com" {
-            println!("here");
             // handle npm URLs
             let npm_url = url.replace(
                 "https://www.npmjs.com/package/",
@@ -186,7 +185,6 @@ pub async fn rate(url: &str, token: &str) -> Option<GithubRepo> {
             // Do not need to check if url contains git+, just do replace. That would take care of it
             let derefurl = giturl.replace(".git", "");
             ghurl = derefurl;
-            println!("{:?}", ghurl);
         } else if domain != "github.com" {
             return None;
         } else {
