@@ -4,7 +4,6 @@ use crate::database::ModuleDB;
 use schema::*;
 
 use rocket::http::Status;
-use rocket::response::status;
 use rocket::serde::json::Json;
 use rocket::Either;
 use rocket::State;
@@ -46,9 +45,4 @@ pub async fn package_rate(
         GoodPinningPractice: scores.version,
     };
     (Status::Ok, Either::Left(Json(ret)))
-}
-
-#[get("/package/<_>/rate")]
-pub async fn package_rate_bad() -> status::BadRequest<()> {
-    status::BadRequest::<()>(None)
 }

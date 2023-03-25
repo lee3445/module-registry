@@ -10,6 +10,6 @@ use api::*;
 //mod tests;
 
 #[launch]
-fn rocket() -> _ {
-    rocket::build().mount("/", routes![world, test, package_rate, package_rate_bad]).manage(database::module_db())
+async fn rocket() -> _ {
+    rocket::build().mount("/", routes![world, test, package_rate]).manage(database::module_db().await)
 }
