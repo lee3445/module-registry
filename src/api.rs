@@ -37,12 +37,14 @@ pub async fn package_rate(
     // get scores from metadata
     let scores = res.unwrap();
     let ret = PackageRating {
+        NetScore: scores.overall,
         BusFactor: scores.bus,
         Correctness: scores.correct,
         RampUp: scores.rampup,
         ResponsiveMaintainer: scores.responsive,
         LicenseScore: scores.license,
         GoodPinningPractice: scores.version,
+        GoodEngineeringProcess: scores.review,
     };
     (Status::Ok, Either::Left(Json(ret)))
 }
