@@ -15,10 +15,7 @@ fn rocket() -> _ {
 
 #[tokio::main]
 async fn main() {
-    let output = conversion::base64_to_zip(
-        "SGVsbG8sIHdvcmxkIQ",
-        "C:/Users/User/Desktop/Purdue/ECE46100/Project2/module-registry/src",
-    );
+    let output = conversion::base64_to_zip("SGVsbG8sIHdvcmxkIQ", "./output/output.txt");
 
     println!("{:?}", output);
 }
