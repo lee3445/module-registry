@@ -15,7 +15,7 @@ fn rocket() -> _ {
 
 #[tokio::main]
 async fn main() {
-    let output = conversion::base64_to_zip("SGVsbG8sIHdvcmxkIQ", "./output/output.txt");
+    let output = conversion::base64_to_zip("SGVsbG8sIHdvcmxkIQ", "./output/output.zip");
 
     println!("{:?}", output);
 }
