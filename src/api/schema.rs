@@ -13,3 +13,26 @@ pub struct PackageRating {
     pub GoodPinningPractice: f64,
     pub GoodEngineeringProcess: f64,
 }
+
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+pub struct Package {
+    pub metadata: PackageMetadata,
+    pub data: PackageData,
+}
+
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+pub struct PackageMetadata {
+    pub Name: String,
+    pub Version: String,
+    pub ID: String,
+}
+
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+pub struct PackageData {
+    pub Content: String,
+    pub URL: String,
+    pub JSProgram: String,
+}
