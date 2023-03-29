@@ -173,17 +173,17 @@ pub async fn rate(url: &str, token: &str) -> Option<GithubRepo> {
             let root: Value = serde_json::from_str(&input).ok()?;
 
             // access element using .get()
-            let giturl: Option<&str> = root
+            let giturl: &str = root
                 .get("repository")
                 .and_then(|value| value.get("url"))
-                .and_then(|value| value.as_str());
+                .and_then(|value| value.as_str())?;
 
-            // dereference the url so we can use .replace() later
-            let derefurl = &giturl.as_deref()?;
+            // force scheme to https
+            let spl = giturl.split_once("://")?;
+            let giturl = "https://".to_owned() + spl.1;
 
             // Do not need to check if url contains git+, just do replace. That would take care of it
-            let derefurl = derefurl.replace("git+", "");
-            let derefurl = derefurl.replace(".git", "");
+            let derefurl = giturl.replace(".git", "");
             ghurl = derefurl;
         } else if domain != "github.com" {
             return None;

@@ -1,12 +1,15 @@
 mod api;
-use api::*;
+mod database;
+
 #[macro_use]
 extern crate rocket;
+
+use api::*;
 
 //#[cfg(test)]
 //mod tests;
 
 #[launch]
-fn rocket() -> _ {
-    rocket::build().mount("/", routes![world])
+async fn rocket() -> _ {
+    rocket::build().mount("/", routes![world, test, package_rate]).manage(database::module_db().await)
 }
