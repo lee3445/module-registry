@@ -5,9 +5,13 @@
 //   http://127.0.0.1:8000/
 #[get("/")]
 pub fn world() -> &'static str {
-    "Hello, world!"
+    "Hello, world!\n"
 }
 #[get("/test")]
 pub fn test() -> &'static str {
-    "Hello, test!"
+    "Hello, test!\n"
+}
+#[get("/package/<id>")]
+pub fn package(id:String) -> &'static str {
+    "Hello, package!\n"
 }
