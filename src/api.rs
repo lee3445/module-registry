@@ -13,5 +13,5 @@ pub fn test() -> &'static str {
 }
 #[get("/package/<id>")]
 pub fn package(id:String) -> &'static str {
-    "Hello, package!\n"
+    "Hello, package!!!!!!!!\n"
 }
