@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use rocket::serde::Serialize;
+use rocket::serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
