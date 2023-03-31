@@ -39,10 +39,25 @@ pub async fn package_retrieve(
     let data = PackageData {
         Content: "Replace with base64 encoding".to_string(),
         URL: db.url.to_string(),
-        JSProgram: "JS".to_string(),
+        JSProgram: None,
     };
     let response = Package { metadata, data };
     (Status::Ok, Either::Left(Json(response)))
+}
+
+#[put("/package/<id>")]
+pub async fn package_update(
+    id: String,
+    mod_db: &State<ModuleDB>,
+    package: Package,
+) -> (Status, &'static str) {
+    //get package
+    let mod_r = mod_db.read().await;
+    let res = mod_r.get(&id);
+    if res.is_none() {
+        return (Status::NotFound, "Package does not exist.");
+    }
+    (Status::Ok, "Version is updated.")
 }
 
 #[get("/package/<id>/rate")]

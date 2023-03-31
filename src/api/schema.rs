@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use rocket::serde::Serialize;
+use rocket::serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
@@ -34,5 +34,5 @@ pub struct PackageMetadata {
 pub struct PackageData {
     pub Content: String,
     pub URL: String,
-    pub JSProgram: String,
+    pub JSProgram: Option<String>,
 }
