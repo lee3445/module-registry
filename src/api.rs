@@ -9,9 +9,9 @@ pub fn world() -> &'static str {
 }
 #[get("/test")]
 pub fn test() -> &'static str {
-    "Hello, test2!\n"
+    "Hello, test3!\n"
 }
 #[get("/package/<id>")]
 pub fn package(id:String) -> &'static str {
-    "Hello, package!!!!!!!!\n"
+    "Hello, package3\n"
 }
