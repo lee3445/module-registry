@@ -1,8 +1,4 @@
 steps:
-- name: 'gcr.io/cloud-builders/docker'
-  args: [ 'build', '-t', 'gcr.io/deft-chariot-374417/github.com/lee3445/module-registry:$COMMIT_SHA', '-f', 'Dockerfile', '.' ]
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'bash'
   args: ['-c', 'gcloud config set app/cloud_build_timeout 1600 && gcloud app deploy']
-  
-images: [rust:latest]
