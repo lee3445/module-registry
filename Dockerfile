@@ -8,4 +8,4 @@ WORKDIR module-registry
 RUN git submodule update --init --recursive
 RUN cargo build
 
-ENTRYPOINT cargo run
+CMD cargo run
