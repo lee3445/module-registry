@@ -17,9 +17,32 @@ pub fn world() -> &'static str {
     "Hello, world!"
 }
 
-#[get("/test")]
-pub fn test() -> &'static str {
-    "Hello, test!"
+#[get("/package/<id>")]
+pub async fn package_retrieve(
+    id: String,
+    mod_db: &State<ModuleDB>,
+) -> (Status, Either<Json<Package>, &'static str>) {
+    // get package
+    let mod_r = mod_db.read().await;
+    let res = mod_r.get(&id);
+    if res.is_none() {
+        return (Status::NotFound, Either::Right("Package does not exist."));
+    }
+
+    let db = res.unwrap();
+
+    let metadata = PackageMetadata {
+        Name: db.name.to_string(),
+        Version: db.version.to_string(),
+        ID: db.id.to_string(),
+    };
+    let data = PackageData {
+        Content: "Replace with base64 encoding".to_string(),
+        URL: db.url.to_string(),
+        JSProgram: "JS".to_string(),
+    };
+    let response = Package { metadata, data };
+    (Status::Ok, Either::Left(Json(response)))
 }
 
 #[get("/package/<id>/rate")]

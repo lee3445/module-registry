@@ -25,6 +25,8 @@ pub async fn module_db() -> ModuleDB {
 
 #[derive(Default, Debug)]
 pub struct Module {
+    // name of module
+    pub name: String,
     // id of module
     pub id: String,
     // url to webpage for module
