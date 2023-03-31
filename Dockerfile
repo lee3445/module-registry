@@ -1,4 +1,4 @@
-FROM google/cloud-sdk
+FROM rust:latest
 
 EXPOSE 8080
 
