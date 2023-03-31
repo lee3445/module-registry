@@ -1,4 +1,5 @@
 steps:
-- name: "gcr.io/cloud-builders/gcloud"
-  args: ["app", "deploy"]
-# timeout: "1600s"
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '-t', 'gcr.io/deft-chariot-374417/github.com/lee3445/module-registry:$COMMIT_SHA', '-f', 'Dockerfile', '-p', '8080:8080/tcp', '.' ]
+
+images: [rust:latest]
