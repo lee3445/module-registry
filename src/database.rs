@@ -25,8 +25,10 @@ pub async fn module_db() -> ModuleDB {
 
 #[derive(Default, Debug)]
 pub struct Module {
+    pub name: String,
     // id of module
     pub id: String,
+    pub ver: String,
     // url to webpage for module
     pub url: String,
     // file storing contents of module
@@ -64,6 +66,15 @@ impl Module {
             ..Default::default()
         })
     }
+}
+
+pub fn get_by_name<'a>(map: &'a HashMap<String, Module>, name: &str) -> Option<&'a Module> {
+    for (k, v) in map {
+        if v.name == name {
+            return Some(v);
+        }
+    }
+    None
 }
 
 #[cfg(test)]
