@@ -7,14 +7,15 @@ use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::Either;
 use rocket::State;
+use rocket::fs::{NamedFile, relative};
+
+use std::path::Path;
 //#[cfg(test)]
 //mod tests;
 
-// Try visiting:
-//   http://127.0.0.1:8000/
 #[get("/")]
-pub fn world() -> &'static str {
-    "Hello, world!"
+pub async fn world() -> Option<NamedFile> {
+    NamedFile::open(Path::new(relative!("index.html"))).await.ok()
 }
 
 #[get("/test")]
