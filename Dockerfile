@@ -1,7 +1,5 @@
 FROM rust:latest
 
-EXPOSE 8080
-
 ADD . /module-registry
 WORKDIR module-registry
 
