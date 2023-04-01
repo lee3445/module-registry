@@ -1,6 +1,14 @@
 runtime: custom
 env: flex
 
-# network:
-#   forwarded_ports:
-#     - 443:8080
+liveness_check:
+  check_interval_sec: 120
+  timeout_sec: 4
+  unhealthy_threshold: 2
+  healthy_threshold: 2
+  
+readiness_check:
+  check_interval_sec: 60
+  timeout_sec: 4
+  unhealthy_threshold: 2
+  healthy_threshold: 2
