@@ -1,7 +1,6 @@
 use base64::{engine::general_purpose, Engine as _};
-use std::fs::File;
-use std::io::prelude::*;
-use std::{fs, io};
+use rocket::tokio::fs;
+use rocket::tokio::io::{self, AsyncReadExt};
 
 pub async fn base64_to_zip(base64_str: &str, path: &str) -> io::Result<()> {
     // remove padding
@@ -13,19 +12,19 @@ pub async fn base64_to_zip(base64_str: &str, path: &str) -> io::Result<()> {
         .unwrap();
 
     // write to a file
-    fs::write(path, decoded_bytes)?;
+    fs::write(path, decoded_bytes).await?;
 
     Ok(())
 }
 
 pub async fn zip_to_base64(path: &str) -> String {
-    let data = fs::read(path).unwrap();
+    let data = fs::read(path).await.unwrap();
     let base64_str = general_purpose::STANDARD.encode(data);
     base64_str
 }
 
-//#[cfg(test)]
-/*mod tests {
+/*#[cfg(test)]
+mod tests {
     use super::*;
 
     // test base64 conversion
@@ -34,9 +33,9 @@ pub async fn zip_to_base64(path: &str) -> String {
         base64_to_zip("SGVsbG8gV29ybGQhPQ==", "./output/output.txt")
             .await
             .unwrap();
-        let mut file = File::open("./output/output.txt").unwrap();
+        let mut file = fs::File::open("./output/output.txt").await.unwrap();
         let mut contents = String::new();
-        file.read_to_string(&mut contents).unwrap();
+        file.read_to_string(&mut contents).await.unwrap();
         assert!(contents == "Hello, world!");
     }
 }*/
