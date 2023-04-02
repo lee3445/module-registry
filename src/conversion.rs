@@ -1,6 +1,7 @@
 use base64::{engine::general_purpose, Engine as _};
 use rocket::tokio::fs;
 use rocket::tokio::io::{self, AsyncReadExt};
+use tokio::fs::File;
 
 pub async fn base64_to_zip(base64_str: &str, path: &str) -> io::Result<()> {
     // remove padding
@@ -17,10 +18,11 @@ pub async fn base64_to_zip(base64_str: &str, path: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub async fn zip_to_base64(path: &str) -> String {
-    let data = fs::read(path).await.unwrap();
-    let base64_str = general_purpose::STANDARD.encode(data);
-    base64_str
+async fn file_to_base64(path: &str) -> std::io::Result<String> {
+    let mut file = File::open(path).await?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer).await?;
+    Ok(general_purpose::STANDARD.encode(&buffer))
 }
 
 /*#[cfg(test)]
