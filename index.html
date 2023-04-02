@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Module Registry</title>
+  </head>
+
+  <body>
+    Search github repo: <input type="text" id="search" name="search"/>
+    GitHub Token: <input type="text" id="tok" name="tok"/>
+    <button type="button" onclick="loadTable()">Search</button> <br>
+    <br>
+    <table id="modules", width="100%">
+    </table>
+
+
+    <script>
+      // generate table with js
+      // https://www.valentinog.com/blog/html-table/
+      function generateTableHead(table, data) {
+        let thead = table.createTHead();
+        let row = thead.insertRow();
+        for (let key of data) {
+          let th = document.createElement("th");
+          let text = document.createTextNode(key);
+          th.appendChild(text);
+          row.appendChild(th);
+        }
+      }
+
+      function generateTable(table, data) {
+        for (let element of data) {
+          let row = table.insertRow();
+          for (key in element) {
+            let cell = row.insertCell();
+            let text = document.createTextNode(element[key]);
+            cell.appendChild(text);
+          }
+        }
+      }
+
+      async function arr() {
+        // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
+        const resp = await fetch("https://api.github.com/licenses", {method: "GET",});
+        return resp.json();
+      }
+
+      function loadTable() {
+        // arr().then((a) => {
+        //   console.log(a);
+        //   var table = document.getElementById("modules");
+        //   table.innerHTML = "";
+        //   generateTable(table, a); // generate the table first
+        //   generateTableHead(table, Object.keys(a[0])); // then the head
+        // });
+
+        const search = document.getElementById("search").value;
+        const token = document.getElementById("tok").value;
+        const data = `{\"query\" : \"query { search(query: \\\"${search} in:name\\\" type:REPOSITORY first:20) { nodes { ... on Repository { name owner {login} url } } } }\" }`;
+
+        fetch("https://api.github.com/graphql", {
+          method: "POST", 
+          headers: {
+            "Authorization": "Bearer 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",
+            "Content-Type": "application/json",
+          },
+          body: data,
+        }).then((resp) => resp.json())
+          .then((data) => {
+            let table = document.getElementById("modules");
+            let arr = data.data.search.nodes;
+            arr.forEach((item, index, a) => {
+              a[index].owner = a[index].owner.login;
+            });
+            console.log(arr);
+            table.innerHTML = ""; // clear table
+            generateTable(table, arr); // generate the table first
+            generateTableHead(table, Object.keys(arr[0])); // then the head
+          });
+      }
+    </script>
+  </body>
+</html>

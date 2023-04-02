@@ -1,23 +1,26 @@
 mod api;
+mod database;
 mod conversion;
-use api::*;
-use conversion::*;
+
 #[macro_use]
 extern crate rocket;
+
+use api::*;
 
 //#[cfg(test)]
 //mod tests;
 
 #[launch]
-fn rocket() -> _ {
-    rocket::build().mount("/", routes![world])
+async fn rocket() -> _ {
+    let port: u32 = std::env::var("PORT")
+        .ok()
+        .and_then(|p| p.parse::<u32>().ok())
+        .unwrap_or(8080);
+    let figment = rocket::Config::figment()
+        .merge(("port", port))
+        .merge(("address", "0.0.0.0"));
+
+    rocket::custom(figment)
+        .mount("/", routes![world, test, package_rate])
+        .manage(database::module_db().await)
 }
-
-/*#[tokio::main]
-async fn main() {
-    let output = base64_to_zip("SGVsbG8gV29ybGQhPQ==", "./output/output.txt")
-        .await
-        .unwrap();
-
-    println!("{:?}", output);
-}*/

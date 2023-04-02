@@ -1,24 +1,51 @@
+mod schema;
+
+use crate::database::ModuleDB;
+use schema::*;
+
+use rocket::http::Status;
+use rocket::serde::json::Json;
+use rocket::Either;
+use rocket::State;
+use rocket::fs::{NamedFile, relative};
+
+use std::path::Path;
 //#[cfg(test)]
 //mod tests;
 
-#[derive(FromFormField)]
-enum Lang {
-    #[field(value = "en")]
-    English,
-    #[field(value = "ru")]
-    #[field(value = "ру")]
-    Russian,
-}
-
-#[derive(FromForm)]
-struct Options<'r> {
-    emoji: bool,
-    name: Option<&'r str>,
-}
-
-// Try visiting:
-//   http://127.0.0.1:8000/hello/world
 #[get("/")]
-pub fn world() -> &'static str {
-    "Hello, world!"
+pub async fn world() -> Option<NamedFile> {
+    NamedFile::open(Path::new(relative!("index.html"))).await.ok()
+}
+
+#[get("/test")]
+pub fn test() -> &'static str {
+    "Hello, test!"
+}
+
+#[get("/package/<id>/rate")]
+pub async fn package_rate(
+    id: String,
+    mod_db: &State<ModuleDB>,
+) -> (Status, Either<Json<PackageRating>, &'static str>) {
+    // get package metadata
+    let mod_r = mod_db.read().await;
+    let res = mod_r.get(&id);
+    if res.is_none() {
+        return (Status::NotFound, Either::Right("Package does not exist."));
+    }
+
+    // get scores from metadata
+    let scores = res.unwrap();
+    let ret = PackageRating {
+        NetScore: scores.overall,
+        BusFactor: scores.bus,
+        Correctness: scores.correct,
+        RampUp: scores.rampup,
+        ResponsiveMaintainer: scores.responsive,
+        LicenseScore: scores.license,
+        GoodPinningPractice: scores.version,
+        GoodEngineeringProcess: scores.review,
+    };
+    (Status::Ok, Either::Left(Json(ret)))
 }
