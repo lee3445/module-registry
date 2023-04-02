@@ -4,7 +4,7 @@ use crate::database::{get_by_name, ModuleDB};
 use schema::*;
 
 use rocket::http::Status;
-use rocket::response::status;
+use rocket::response::{Response, status};
 use rocket::serde::json::Json;
 use rocket::Either;
 use rocket::State;
@@ -69,7 +69,10 @@ pub async fn packages_list(
         ret = ret.drain(offset..offset + 20).collect();
     }
 
-    Either::Left(Json(ret))
+    // set header
+    let ret = Response::build_from(Json(ret));
+
+    Either::Left(ret)
 }
 #[post("/packages")]
 pub async fn packages_list_400() -> status::BadRequest<&'static str> {
