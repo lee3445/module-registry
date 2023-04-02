@@ -18,7 +18,7 @@ pub async fn base64_to_zip(base64_str: &str, path: &str) -> io::Result<()> {
     Ok(())
 }
 
-async fn file_to_base64(path: &str) -> std::io::Result<String> {
+pub async fn zip_to_base64(path: &str) -> std::io::Result<String> {
     let mut file = File::open(path).await?;
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer).await?;
