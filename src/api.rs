@@ -41,7 +41,7 @@ pub async fn package_retrieve(
         ID: db.id.to_string(),
     };
     let data = PackageData {
-        Content: zip_to_base64("path").to_string(),
+        Content: zip_to_base64(db.path),
         URL: db.url.to_string(),
         JSProgram: None,
     };
