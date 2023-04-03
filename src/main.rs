@@ -21,6 +21,6 @@ async fn rocket() -> _ {
         .merge(("address", "0.0.0.0"));
 
     rocket::custom(figment)
-        .mount("/", routes![world, test, package_rate])
+        .mount("/", routes![world, package_retrieve, package_rate])
         .manage(database::module_db().await)
 }

@@ -34,5 +34,5 @@ pub struct PackageMetadata {
 pub struct PackageData {
     pub Content: String,
     pub URL: String,
-    pub JSProgram: String,
+    pub JSProgram: Option<String>,
 }

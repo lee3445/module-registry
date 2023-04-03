@@ -1,13 +1,14 @@
 mod schema;
 
+use crate::conversion::*;
 use crate::database::ModuleDB;
 use schema::*;
 
+use rocket::fs::{relative, NamedFile};
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::Either;
 use rocket::State;
-use rocket::fs::{NamedFile, relative};
 
 use std::path::Path;
 //#[cfg(test)]
@@ -15,7 +16,9 @@ use std::path::Path;
 
 #[get("/")]
 pub async fn world() -> Option<NamedFile> {
-    NamedFile::open(Path::new(relative!("index.html"))).await.ok()
+    NamedFile::open(Path::new(relative!("index.html")))
+        .await
+        .ok()
 }
 
 #[get("/package/<id>")]
@@ -38,9 +41,9 @@ pub async fn package_retrieve(
         ID: db.id.to_string(),
     };
     let data = PackageData {
-        Content: "Replace with base64 encoding".to_string(),
+        Content: zip_to_base64("path").to_string(),
         URL: db.url.to_string(),
-        JSProgram: "JS".to_string(),
+        JSProgram: None,
     };
     let response = Package { metadata, data };
     (Status::Ok, Either::Left(Json(response)))
