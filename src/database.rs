@@ -84,8 +84,9 @@ impl Module {
     }
 }
 
+// search through hashmap for matching name
 pub fn get_by_name<'a>(map: &'a HashMap<String, Module>, name: &str) -> Option<&'a Module> {
-    for (k, v) in map {
+    for v in map.values() {
         if v.name == name {
             return Some(v);
         }

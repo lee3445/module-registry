@@ -12,7 +12,17 @@ use api::*;
 #[launch]
 async fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![world, test, packages_list, packages_list_400, package_rate])
+        .mount(
+            "/",
+            routes![
+                world,
+                test,
+                packages_list,
+                packages_list_bad_offset,
+                packages_list_400,
+                package_rate
+            ],
+        )
         .register("/packages", catchers![packages_list_422])
         .manage(database::module_db().await)
 }

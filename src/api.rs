@@ -3,8 +3,8 @@ mod schema;
 use crate::database::{get_by_name, ModuleDB};
 use schema::*;
 
-use rocket::http::Status;
-use rocket::response::{Response, status};
+use rocket::http::{Header, Status};
+use rocket::response::{status, Responder};
 use rocket::serde::json::Json;
 use rocket::Either;
 use rocket::State;
@@ -23,20 +23,23 @@ pub fn test() -> &'static str {
     "Hello, test!"
 }
 
-// requests with offset that are not u32 will be accepted, offset = None
-#[post("/packages?<offset>", data = "<query>")]
+// path forwarding:
+// 1. request with usize offset and valid query -> accept
+// 2. request with non-usize offset and valid query -> 400
+// 3. request with no offset and valid query -> accept, offset = 0
+// 4. otherwise -> 400
+// offset in header is "" when the last page is returned
+#[post("/packages?<offset>", data = "<query>", rank = 1)]
 pub async fn packages_list(
-    offset: Option<u32>,
+    offset: usize,
     query: Json<Vec<PackageQuery>>,
     mod_db: &State<ModuleDB>,
-) -> Either<Json<Vec<PackageMetadata>>, (Status, &'static str)> {
-    println!("{:?}", offset);
+) -> Either<PackageListResponse, status::BadRequest<&'static str>> {
     let mut ret = Vec::new();
-    // sort ret
-    // idx to offset
     let query_vec = query.to_vec();
 
     let mod_r = mod_db.read().await;
+    // find maching package for each query
     for q in query_vec {
         if q.Name == "*" {
             // get all packages
@@ -60,30 +63,62 @@ pub async fn packages_list(
         }
     }
 
-    // sort result and get page offset
-    ret.sort_by(|a, b| a.ID.cmp(&b.ID));
-    let offset: usize = offset.unwrap_or(0).try_into().unwrap_or(0);
-    if ret.len() < offset + 20 {
-        ret = ret.drain(offset..).collect();
-    } else {
-        ret = ret.drain(offset..offset + 20).collect();
+    // check if offset is out of range
+    if offset >= ret.len() {
+        return Either::Right(status::BadRequest(Some("Offset out of range")));
     }
 
-    // set header
-    let ret = Response::build_from(Json(ret));
+    // sort result and get next offset
+    let page_size = 20;
+    ret.sort_by(|a, b| a.ID.cmp(&b.ID));
+    let next_offset = if offset + page_size >= ret.len() {
+        String::new()
+    } else {
+        (offset + page_size).to_string()
+    };
 
-    Either::Left(ret)
+    // keep entries offset..(offset+page_size)
+    if ret.len() < offset + page_size {
+        ret = ret.drain(offset..).collect();
+    } else {
+        ret = ret.drain(offset..offset + page_size).collect();
+    }
+
+    Either::Left(PackageListResponse {
+        offset: Header::new("offset", next_offset),
+        body: Json(ret),
+    })
 }
-#[post("/packages")]
+#[post("/packages?<offset>", data = "<query>", rank = 2)]
+pub async fn packages_list_bad_offset(
+    offset: Option<String>,
+    query: Json<Vec<PackageQuery>>,
+    mod_db: &State<ModuleDB>,
+) -> Either<PackageListResponse, status::BadRequest<&'static str>> {
+    match offset {
+        Some(_) => Either::Right(status::BadRequest(Some(
+            "Offset must be a non-negative integer, or no packages are matched by query",
+        ))),
+        None => packages_list(0, query, mod_db).await,
+    }
+}
+#[post("/packages", rank = 3)]
 pub async fn packages_list_400() -> status::BadRequest<&'static str> {
     status::BadRequest(Some(
-        "There is missing field(s) in the PackageQuery/offset or it is formed improperly.",
+        "There is missing field(s) in the PackageQuery/AuthenticationToken/offset or it is formed improperly.",
     ))
 }
 // reroute 422 to 400
+// 422 is possible when passed in invalid query
 #[catch(422)]
 pub fn packages_list_422() -> status::BadRequest<&'static str> {
     status::BadRequest(Some("Error processing data"))
+}
+// no other way to set custom headers other than this
+#[derive(Responder)]
+pub struct PackageListResponse {
+    body: Json<Vec<PackageMetadata>>,
+    offset: Header<'static>,
 }
 
 #[get("/package/<id>/rate")]
