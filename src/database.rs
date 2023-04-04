@@ -65,7 +65,7 @@ impl Module {
     // initialize struct
     // TODO: add path
     async fn new(id: String, url: String) -> Option<Self> {
-        let scores = cli::rate(&url, env!("GITHUB_TOKEN")).await?;
+        let scores = cli::rate(&url, &std::env::var("GITHUB_TOKEN").unwrap()).await?;
         Some(Self {
             id,
             url,

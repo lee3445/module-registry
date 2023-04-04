@@ -1,5 +1,6 @@
 mod api;
 mod database;
+mod conversion;
 
 #[macro_use]
 extern crate rocket;
@@ -11,7 +12,16 @@ use api::*;
 
 #[launch]
 async fn rocket() -> _ {
-    rocket::build()
+
+    let port: u32 = std::env::var("PORT")
+        .ok()
+        .and_then(|p| p.parse::<u32>().ok())
+        .unwrap_or(8080);
+    let figment = rocket::Config::figment()
+        .merge(("port", port))
+        .merge(("address", "0.0.0.0"));
+
+    rocket::custom(figment)
         .mount(
             "/",
             routes![
