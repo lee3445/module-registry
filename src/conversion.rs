@@ -2,7 +2,6 @@ use base64::{engine::general_purpose, Engine as _};
 use rocket::tokio::fs;
 use rocket::tokio::io::{self, AsyncReadExt};
 use tokio::fs::File;
-use std::{path::PathBuf};
 
 pub async fn base64_to_zip(base64_str: &str, path: &str) -> io::Result<()> {
     // remove padding
@@ -19,7 +18,7 @@ pub async fn base64_to_zip(base64_str: &str, path: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub async fn zip_to_base64(path: PathBuf) -> std::io::Result<String> {
+pub async fn zip_to_base64(path: &str) -> std::io::Result<String> {
     let mut file = File::open(path).await?;
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer).await?;
