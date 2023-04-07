@@ -30,7 +30,9 @@ async fn rocket() -> _ {
                 packages_list,
                 packages_list_bad_offset,
                 packages_list_400,
-                package_rate
+                package_rate,
+                package_by_name_get,
+                package_by_name_delete,
             ],
         )
         .register("/packages", catchers![packages_list_422])

@@ -3,12 +3,12 @@ mod schema;
 use crate::database::{get_by_name, ModuleDB};
 use schema::*;
 
+use rocket::fs::{relative, NamedFile};
 use rocket::http::{Header, Status};
 use rocket::response::{status, Responder};
 use rocket::serde::json::Json;
 use rocket::Either;
 use rocket::State;
-use rocket::fs::{NamedFile, relative};
 
 use std::path::Path;
 //#[cfg(test)]
@@ -16,7 +16,9 @@ use std::path::Path;
 
 #[get("/")]
 pub async fn world() -> Option<NamedFile> {
-    NamedFile::open(Path::new(relative!("index.html"))).await.ok()
+    NamedFile::open(Path::new(relative!("index.html")))
+        .await
+        .ok()
 }
 
 #[get("/test")]
@@ -147,4 +149,27 @@ pub async fn package_rate(
         GoodEngineeringProcess: scores.review,
     };
     (Status::Ok, Either::Left(Json(ret)))
+}
+
+#[get("/package/byName/<name>", rank = 1)]
+pub fn package_by_name_get(
+    name: String,
+    mod_db: &State<ModuleDB>,
+) -> Either<Json<Vec<PackageHistoryEntry>>, (Status, &'static str)> {
+    Either::Right((Status::NotFound, "nope"))
+}
+
+#[delete("/package/byName/<name>")]
+pub async fn package_by_name_delete(name: String, mod_db: &State<ModuleDB>) -> (Status, String) {
+    let mut mod_w = mod_db.write().await;
+
+    // try to remove and check hashmap size to see if any entry is deleted
+    let size_before = mod_w.len();
+    mod_w.retain(|_, v| v.name != name);
+    let num_deleted = size_before - mod_w.len();
+    if num_deleted > 0 {
+        (Status::Ok, format!("{} package(s) deleted", num_deleted))
+    } else {
+        (Status::NotFound, "Package does not exist".to_string())
+    }
 }

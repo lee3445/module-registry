@@ -11,6 +11,13 @@ pub struct PackageMetadata {
 
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
+pub struct User {
+    name: String,
+    isAdmin: bool,
+}
+
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
 pub struct PackageRating {
     pub NetScore: f64,
     pub BusFactor: f64,
@@ -21,6 +28,16 @@ pub struct PackageRating {
     pub GoodPinningPractice: f64,
     pub GoodEngineeringProcess: f64,
 }
+
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+pub struct PackageHistoryEntry {
+    pub User: User,
+    pub Date: String,
+    pub PackageMetadata: PackageMetadata,
+    pub Action: String,
+}
+
 
 #[derive(Deserialize, Clone)]
 #[serde(crate = "rocket::serde")]
