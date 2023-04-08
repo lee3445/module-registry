@@ -29,6 +29,14 @@ pub async fn module_db() -> ModuleDB {
         },
     );
     hm.insert(
+        "fake_module_same_name".to_string(),
+        Module {
+            name: "fake module".to_string(),
+            id: "fake_module_same_name".to_string(),
+            ..Default::default()
+        },
+    );
+    hm.insert(
         "fake_module_two".to_string(),
         Module {
             name: "fake module 2".to_string(),

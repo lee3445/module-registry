@@ -152,11 +152,37 @@ pub async fn package_rate(
 }
 
 #[get("/package/byName/<name>", rank = 1)]
-pub fn package_by_name_get(
+pub async fn package_by_name_get(
     name: String,
     mod_db: &State<ModuleDB>,
 ) -> Either<Json<Vec<PackageHistoryEntry>>, (Status, &'static str)> {
-    Either::Right((Status::NotFound, "nope"))
+    let mut ret = Vec::new();
+    let mod_r = mod_db.read().await;
+    for v in mod_r.values() {
+        if v.name == name {
+            // history is not implemented, so only PackageMetadata is filled in
+            ret.push(PackageHistoryEntry {
+                User: User {
+                    name: String::new(),
+                    isAdmin: false,
+                },
+                Date: String::new(),
+                PackageMetadata: PackageMetadata {
+                    Name: v.name.clone(),
+                    ID: v.id.clone(),
+                    Version: v.ver.clone(),
+                },
+                Action: "CREATE".to_string(),
+            });
+        }
+    }
+
+    // 404 if no entry matches the name
+    if ret.is_empty() {
+        Either::Right((Status::NotFound, "Package does not exist"))
+    } else {
+        Either::Left(Json(ret))
+    }
 }
 
 #[delete("/package/byName/<name>")]

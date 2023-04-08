@@ -12,8 +12,8 @@ pub struct PackageMetadata {
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
 pub struct User {
-    name: String,
-    isAdmin: bool,
+    pub name: String,
+    pub isAdmin: bool,
 }
 
 #[derive(Serialize)]
