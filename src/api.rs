@@ -50,21 +50,6 @@ pub async fn package_retrieve(
     (Status::Ok, Either::Left(Json(response)))
 }
 
-// #[put("/package/<id>")]
-// pub async fn package_update(
-//     id: String,
-//     mod_db: &State<ModuleDB>,
-//     package: Package,
-// ) -> (Status, &'static str) {
-//     //get package
-//     let mod_r = mod_db.read().await;
-//     let res = mod_r.get(&id);
-//     if res.is_none() {
-//         return (Status::NotFound, "Package does not exist.");
-//     }
-//     (Status::Ok, "Version is updated.")
-// }
-
 #[get("/package/<id>/rate")]
 pub async fn package_rate(
     id: String,
