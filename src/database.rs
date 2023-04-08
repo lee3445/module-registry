@@ -54,7 +54,7 @@ impl Module {
         Some(Self {
             id,
             url,
-            path: format!("./packages/{packageid}.txt"),
+            path: format!("./packages/{packageid}.zip"),
             overall: scores.overall() as f64,
             bus: scores.bus() as f64,
             correct: scores.correct() as f64,
