@@ -3,11 +3,11 @@ mod schema;
 use crate::database::ModuleDB;
 use schema::*;
 
+use rocket::fs::{relative, NamedFile};
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::Either;
 use rocket::State;
-use rocket::fs::{NamedFile, relative};
 
 use std::path::Path;
 //#[cfg(test)]
@@ -15,7 +15,9 @@ use std::path::Path;
 
 #[get("/")]
 pub async fn world() -> Option<NamedFile> {
-    NamedFile::open(Path::new(relative!("index.html"))).await.ok()
+    NamedFile::open(Path::new(relative!("index.html")))
+        .await
+        .ok()
 }
 
 #[get("/test")]
@@ -48,4 +50,27 @@ pub async fn package_rate(
         GoodEngineeringProcess: scores.review,
     };
     (Status::Ok, Either::Left(Json(ret)))
+}
+
+#[delete("/reset")]
+pub async fn package_reset(mod_db: &State<ModuleDB>) -> Status {
+    let mut write_lock = mod_db.write().await;
+    write_lock.clear();
+    Status::Ok
+}
+
+#[delete("/package/<id>")]
+pub async fn package_delete(id: String, mod_db: &State<ModuleDB>) -> (Status, &'static str) {
+    // get package
+    let mut mod_r = mod_db.write().await;
+    let res = mod_r.remove(&id);
+    if res.is_none() {
+        return (Status::NotFound, "No such package.");
+    }
+    (Status::Ok, "Package is deleted.")
+}
+
+#[put("/authenticate")]
+pub async fn authenticate() -> (Status, &'static str) {
+    (Status::Ok, "Not implemented")
 }
