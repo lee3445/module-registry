@@ -17,10 +17,22 @@ async fn rocket() -> _ {
         .and_then(|p| p.parse::<u32>().ok())
         .unwrap_or(8080);
     let figment = rocket::Config::figment()
-        .merge(("port", 8000))
-        .merge(("address", "127.0.0.1"));
+        .merge(("port", port))
+        .merge(("address", "0.0.0.0"));
 
     rocket::custom(figment)
-        .mount("/", routes![world, package_retrieve, package_rate])
+        .mount(
+            "/",
+            routes![
+                world,
+                test,
+                packages_list,
+                packages_list_bad_offset,
+                packages_list_400,
+                package_rate,
+                package_retrieve
+            ],
+        )
+        .register("/packages", catchers![packages_list_422])
         .manage(database::module_db().await)
 }

@@ -20,6 +20,22 @@ pub async fn module_db() -> ModuleDB {
         .await
         .unwrap(),
     );
+    hm.insert(
+        "fake_module".to_string(),
+        Module {
+            name: "fake module".to_string(),
+            id: "fake_module".to_string(),
+            ..Default::default()
+        },
+    );
+    hm.insert(
+        "fake_module_two".to_string(),
+        Module {
+            name: "fake module 2".to_string(),
+            id: "fake_module_two".to_string(),
+            ..Default::default()
+        },
+    );
     RwLock::new(hm)
 }
 
@@ -29,6 +45,7 @@ pub struct Module {
     pub name: String,
     // id of module
     pub id: String,
+    pub ver: String,
     // url to webpage for module
     pub url: String,
     // file storing contents of module
@@ -67,6 +84,16 @@ impl Module {
             ..Default::default()
         })
     }
+}
+
+// search through hashmap for matching name
+pub fn get_by_name<'a>(map: &'a HashMap<String, Module>, name: &str) -> Option<&'a Module> {
+    for v in map.values() {
+        if v.name == name {
+            return Some(v);
+        }
+    }
+    None
 }
 
 #[cfg(test)]
