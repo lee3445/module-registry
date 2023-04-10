@@ -53,10 +53,10 @@ pub async fn package_rate(
 }
 
 #[delete("/reset")]
-pub async fn package_reset(mod_db: &State<ModuleDB>) -> Status {
+pub async fn package_reset(mod_db: &State<ModuleDB>) -> (Status, &'static str) {
     let mut write_lock = mod_db.write().await;
     write_lock.clear();
-    Status::Ok
+    (Status::Ok, "Registry is reset.")
 }
 
 #[delete("/package/<id>")]
@@ -72,5 +72,5 @@ pub async fn package_delete(id: String, mod_db: &State<ModuleDB>) -> (Status, &'
 
 #[put("/authenticate")]
 pub async fn authenticate() -> (Status, &'static str) {
-    (Status::Ok, "Not implemented")
+    (Status::NotImplemented, "Not implemented")
 }
