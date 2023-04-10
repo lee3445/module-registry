@@ -1,5 +1,5 @@
 use rocket::tokio::sync::RwLock;
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
 
 pub type ModuleDB = RwLock<HashMap<String, Module>>;
 
