@@ -12,6 +12,7 @@ use api::*;
 
 #[launch]
 async fn rocket() -> _ {
+
     let port: u32 = std::env::var("PORT")
         .ok()
         .and_then(|p| p.parse::<u32>().ok())
