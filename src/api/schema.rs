@@ -39,7 +39,7 @@ pub struct Package {
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
 pub struct PackageData {
-    pub Content: String,
+    pub Content: Option<String>,
     pub URL: String,
     pub JSProgram: Option<String>,
 }

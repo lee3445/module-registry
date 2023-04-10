@@ -146,7 +146,7 @@ pub async fn package_retrieve(
         ID: db.id.clone(),
     };
     let data = PackageData {
-        Content: zip_to_base64(db.path.as_str()).await.unwrap(),
+        Content: Some(zip_to_base64(db.path.as_str()).await.unwrap()),
         URL: db.url.clone(),
         JSProgram: None,
     };
