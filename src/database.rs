@@ -1,5 +1,5 @@
 use rocket::tokio::sync::RwLock;
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
 
 pub type ModuleDB = RwLock<HashMap<String, Module>>;
 
@@ -41,6 +41,7 @@ pub async fn module_db() -> ModuleDB {
 
 #[derive(Default, Debug)]
 pub struct Module {
+    // name of module
     pub name: String,
     // id of module
     pub id: String,
@@ -48,7 +49,7 @@ pub struct Module {
     // url to webpage for module
     pub url: String,
     // file storing contents of module
-    pub path: PathBuf,
+    pub path: String,
 
     // module scores
     pub overall: f64,
@@ -66,10 +67,11 @@ impl Module {
     // TODO: add path
     async fn new(id: String, url: String) -> Option<Self> {
         let scores = cli::rate(&url, &std::env::var("GITHUB_TOKEN").unwrap()).await?;
+        let packageid = id.clone();
         Some(Self {
             id,
             url,
-
+            path: format!("./packages/{packageid}.zip"),
             overall: scores.overall() as f64,
             bus: scores.bus() as f64,
             correct: scores.correct() as f64,

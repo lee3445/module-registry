@@ -1,6 +1,6 @@
 mod api;
-mod database;
 mod conversion;
+mod database;
 
 #[macro_use]
 extern crate rocket;
@@ -30,7 +30,8 @@ async fn rocket() -> _ {
                 packages_list,
                 packages_list_bad_offset,
                 packages_list_400,
-                package_rate
+                package_rate,
+                package_retrieve
             ],
         )
         .register("/packages", catchers![packages_list_422])
