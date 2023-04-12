@@ -10,6 +10,8 @@ use rocket::serde::json::Json;
 use rocket::Either;
 use rocket::State;
 
+use rocket::tokio::fs;
+
 use std::path::Path;
 //#[cfg(test)]
 //mod tests;
@@ -189,13 +191,22 @@ pub async fn package_by_name_get(
 pub async fn package_by_name_delete(name: String, mod_db: &State<ModuleDB>) -> (Status, String) {
     let mut mod_w = mod_db.write().await;
 
-    // try to remove and check hashmap size to see if any entry is deleted
-    let size_before = mod_w.len();
-    mod_w.retain(|_, v| v.name != name);
-    let num_deleted = size_before - mod_w.len();
-    if num_deleted > 0 {
-        (Status::Ok, format!("{} package(s) deleted", num_deleted))
-    } else {
+    let (del, keep) = mod_w.drain().partition(|(_, v)| v.name == name);
+    *mod_w = keep;
+
+    // release write lock early because deleting files takes time
+    let _ = mod_w.downgrade();
+
+    // remove files associated with deleted modules
+    let num_deleted = del.len();
+    if num_deleted == 0 {
         (Status::NotFound, "Package does not exist".to_string())
+    } else {
+        for (k, v) in del {
+            if fs::remove_file(v.path).await.is_err() {
+                println!("cannot remove file for module: {}", k);
+            }
+        }
+        (Status::Ok, format!("{} package(s) deleted", num_deleted))
     }
 }
