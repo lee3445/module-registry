@@ -1,5 +1,6 @@
 mod schema;
 
+use crate::conversion::*;
 use crate::database::{get_by_name, ModuleDB};
 use schema::*;
 
@@ -124,6 +125,35 @@ pub fn packages_list_422() -> status::BadRequest<&'static str> {
 pub struct PackageListResponse {
     body: Json<Vec<PackageMetadata>>,
     offset: Header<'static>,
+}
+
+//http://127.0.0.1:8000/package/postcss
+#[get("/package/<id>")]
+pub async fn package_retrieve(
+    id: String,
+    mod_db: &State<ModuleDB>,
+) -> (Status, Either<Json<Package>, &'static str>) {
+    // get package id from database
+    let mod_r = mod_db.read().await;
+    let res = mod_r.get(&id);
+    if res.is_none() {
+        return (Status::NotFound, Either::Right("Package does not exist."));
+    }
+    let db = res.unwrap();
+
+    // initialize metadata and data
+    let metadata = PackageMetadata {
+        Name: db.name.clone(),
+        Version: db.ver.clone(),
+        ID: db.id.clone(),
+    };
+    let data = PackageData {
+        Content: Some(zip_to_base64(db.path.as_str()).await.unwrap()),
+        URL: db.url.clone(),
+        JSProgram: None,
+    };
+    let response = Package { metadata, data };
+    (Status::Ok, Either::Left(Json(response)))
 }
 
 #[get("/package/<id>/rate")]

@@ -45,3 +45,18 @@ pub struct PackageQuery {
     pub Version: Option<String>,
     pub Name: String,
 }
+
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+pub struct Package {
+    pub metadata: PackageMetadata,
+    pub data: PackageData,
+}
+
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+pub struct PackageData {
+    pub Content: Option<String>,
+    pub URL: String,
+    pub JSProgram: Option<String>,
+}
