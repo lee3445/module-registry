@@ -12,6 +12,7 @@ use rocket::State;
 
 use rocket::tokio::fs;
 
+use std::fmt::write;
 use std::path::Path;
 //#[cfg(test)]
 //mod tests;
@@ -59,21 +60,25 @@ pub async fn package_rate(
 pub async fn package_reset(mod_db: &State<ModuleDB>) -> (Status, &'static str) {
     let mut write_lock = mod_db.write().await;
     write_lock.clear();
+    for module in write_lock.values_mut() {
+        let path = module.path.clone();
+        if fs::remove_file(path).await.is_err() {
+            println!("cannot remove file for module");
+        }
+    }
     (Status::Ok, "Registry is reset.")
 }
 
 #[delete("/package/<id>")]
 pub async fn package_delete(id: String, mod_db: &State<ModuleDB>) -> (Status, &'static str) {
+    // get package
     let mut mod_r = mod_db.write().await;
-    let (del, keep) = mod_r.drain().partition(|(_, v)| v.id == id);
-    *mod_r = keep;
-    if del.is_empty() {
+    let res = mod_r.remove(&id);
+    if res.is_none() {
         return (Status::NotFound, "No such package.");
     }
-    for (k, v) in del {
-        if fs::remove_file(v.path).await.is_err() {
-            println!("cannot remove file for module: {}", k);
-        }
+    if fs::remove_file(res.unwrap().path).await.is_err() {
+        println!("cannot remove file for module");
     }
     (Status::Ok, "Package is deleted.")
 }
