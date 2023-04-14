@@ -66,7 +66,8 @@ pub async fn package_reset(mod_db: &State<ModuleDB>) -> (Status, &'static str) {
 pub async fn package_delete(id: String, mod_db: &State<ModuleDB>) -> (Status, &'static str) {
     let mut mod_r = mod_db.write().await;
     let (del, keep) = mod_r.drain().partition(|(_, v)| v.id == id);
-    if del.is_none() {
+    *mod_r = keep;
+    if del.is_empty() {
         return (Status::NotFound, "No such package.");
     }
     if fs::remove_file(del.path).await.is_err() {
