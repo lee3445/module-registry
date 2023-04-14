@@ -70,8 +70,10 @@ pub async fn package_delete(id: String, mod_db: &State<ModuleDB>) -> (Status, &'
     if del.is_empty() {
         return (Status::NotFound, "No such package.");
     }
-    if fs::remove_file(del.path).await.is_err() {
-        println!("cannot remove file for module");
+    for (k, v) in del {
+        if fs::remove_file(v.path).await.is_err() {
+            println!("cannot remove file for module: {}", k);
+        }
     }
     (Status::Ok, "Package is deleted.")
 }
