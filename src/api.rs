@@ -11,6 +11,8 @@ use rocket::serde::json::Json;
 use rocket::Either;
 use rocket::State;
 
+use rocket::tokio::fs;
+
 use std::path::Path;
 //#[cfg(test)]
 //mod tests;
@@ -179,4 +181,62 @@ pub async fn package_rate(
         GoodEngineeringProcess: scores.review,
     };
     (Status::Ok, Either::Left(Json(ret)))
+}
+
+#[get("/package/byName/<name>", rank = 1)]
+pub async fn package_by_name_get(
+    name: String,
+    mod_db: &State<ModuleDB>,
+) -> Either<Json<Vec<PackageHistoryEntry>>, (Status, &'static str)> {
+    let mut ret = Vec::new();
+    let mod_r = mod_db.read().await;
+    for v in mod_r.values() {
+        if v.name == name {
+            // history is not implemented, so only PackageMetadata is filled in
+            ret.push(PackageHistoryEntry {
+                User: User {
+                    name: String::new(),
+                    isAdmin: false,
+                },
+                Date: String::new(),
+                PackageMetadata: PackageMetadata {
+                    Name: v.name.clone(),
+                    ID: v.id.clone(),
+                    Version: v.ver.clone(),
+                },
+                Action: "CREATE".to_string(),
+            });
+        }
+    }
+
+    // 404 if no entry matches the name
+    if ret.is_empty() {
+        Either::Right((Status::NotFound, "Package does not exist"))
+    } else {
+        Either::Left(Json(ret))
+    }
+}
+
+#[delete("/package/byName/<name>")]
+pub async fn package_by_name_delete(name: String, mod_db: &State<ModuleDB>) -> (Status, String) {
+    let mut mod_w = mod_db.write().await;
+
+    let (del, keep) = mod_w.drain().partition(|(_, v)| v.name == name);
+    *mod_w = keep;
+
+    // release write lock early because deleting files takes time
+    let _ = mod_w.downgrade();
+
+    // remove files associated with deleted modules
+    let num_deleted = del.len();
+    if num_deleted == 0 {
+        (Status::NotFound, "Package does not exist".to_string())
+    } else {
+        for (k, v) in del {
+            if fs::remove_file(v.path).await.is_err() {
+                println!("cannot remove file for module: {}", k);
+            }
+        }
+        (Status::Ok, format!("{} package(s) deleted", num_deleted))
+    }
 }
