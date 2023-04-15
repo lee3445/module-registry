@@ -12,6 +12,7 @@ use api::*;
 
 #[launch]
 async fn rocket() -> _ {
+
     let port: u32 = std::env::var("PORT")
         .ok()
         .and_then(|p| p.parse::<u32>().ok())
@@ -26,11 +27,18 @@ async fn rocket() -> _ {
             routes![
                 world,
                 test,
-                package_rate,
+                package_retrieve,
                 package_reset,
                 package_delete,
-                authenticate
+                authenticate,
+                packages_list,
+                packages_list_bad_offset,
+                packages_list_400,
+                package_rate,
+                package_by_name_get,
+                package_by_name_delete,
             ],
         )
+        .register("/packages", catchers![packages_list_422])
         .manage(database::module_db().await)
 }

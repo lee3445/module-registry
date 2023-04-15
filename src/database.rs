@@ -1,5 +1,5 @@
 use rocket::tokio::sync::RwLock;
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
 
 pub type ModuleDB = RwLock<HashMap<String, Module>>;
 
@@ -20,17 +20,44 @@ pub async fn module_db() -> ModuleDB {
         .await
         .unwrap(),
     );
+    hm.insert(
+        "fake_module".to_string(),
+        Module {
+            name: "fake module".to_string(),
+            id: "fake_module".to_string(),
+            ..Default::default()
+        },
+    );
+    hm.insert(
+        "fake_module_same_name".to_string(),
+        Module {
+            name: "fake module".to_string(),
+            id: "fake_module_same_name".to_string(),
+            ..Default::default()
+        },
+    );
+    hm.insert(
+        "fake_module_two".to_string(),
+        Module {
+            name: "fake module 2".to_string(),
+            id: "fake_module_two".to_string(),
+            ..Default::default()
+        },
+    );
     RwLock::new(hm)
 }
 
 #[derive(Default, Debug)]
 pub struct Module {
+    // name of module
+    pub name: String,
     // id of module
     pub id: String,
+    pub ver: String,
     // url to webpage for module
     pub url: String,
     // file storing contents of module
-    pub path: PathBuf,
+    pub path: String,
 
     // module scores
     pub overall: f64,
@@ -48,10 +75,11 @@ impl Module {
     // TODO: add path
     async fn new(id: String, url: String) -> Option<Self> {
         let scores = cli::rate(&url, &std::env::var("GITHUB_TOKEN").unwrap()).await?;
+        let packageid = id.clone();
         Some(Self {
             id,
             url,
-
+            path: format!("./packages/{packageid}.zip"),
             overall: scores.overall() as f64,
             bus: scores.bus() as f64,
             correct: scores.correct() as f64,
@@ -64,6 +92,16 @@ impl Module {
             ..Default::default()
         })
     }
+}
+
+// search through hashmap for matching name
+pub fn get_by_name<'a>(map: &'a HashMap<String, Module>, name: &str) -> Option<&'a Module> {
+    for v in map.values() {
+        if v.name == name {
+            return Some(v);
+        }
+    }
+    None
 }
 
 #[cfg(test)]
