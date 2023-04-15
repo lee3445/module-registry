@@ -33,6 +33,7 @@ async fn rocket() -> _ {
                 package_rate,
                 package_by_name_get,
                 package_by_name_delete,
+                package_by_regex_get,
             ],
         )
         .register("/packages", catchers![packages_list_422])

@@ -46,6 +46,13 @@ pub struct PackageQuery {
     pub Name: String,
 }
 
+#[derive(Deserialize)]
+#[serde(crate = "rocket::serde")]
+pub struct PackageRegEx {
+    pub RegEx: String,
+}
+
+
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
 pub struct Package {
