@@ -28,7 +28,7 @@ pub fn test() -> &'static str {
 }
 
 #[put("/package/<id>")]
-pub async fn pacakge_update(
+pub async fn package_update(
     id: String,
     package: &State<Package>,
     mod_db: &State<ModuleDB>,
@@ -39,14 +39,20 @@ pub async fn pacakge_update(
         return (Status::NotFound, "Package does not exist.");
     }
 
-    let db = res.unwrap(); 
+    let db = res.unwrap();
 
-    if ((package.metadata.Name == db.name) & (package.metadata.Version == db.ver) & (package.metadata.ID == db.id)) {
+    if (package.metadata.Name == db.name)
+        & (package.metadata.Version == db.ver)
+        & (package.metadata.ID == db.id)
+    {
         //update the package if metadata matches
-        
+        base64_to_zip(
+            package.data.Content.as_ref().unwrap().as_str(),
+            db.path.as_str(),
+        )
+        .await
+        .unwrap();
     }
-
-    if map.insert(id, package)
 
     (Status::Ok, "Version is updated.")
 }
