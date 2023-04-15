@@ -13,6 +13,7 @@ use rocket::State;
 
 use rocket::tokio::fs;
 
+use std::fmt::write;
 use std::path::Path;
 //#[cfg(test)]
 //mod tests;
@@ -156,6 +157,20 @@ pub async fn package_retrieve(
     (Status::Ok, Either::Left(Json(response)))
 }
 
+#[delete("/package/<id>")]
+pub async fn package_delete(id: String, mod_db: &State<ModuleDB>) -> (Status, &'static str) {
+    // get package
+    let mut mod_r = mod_db.write().await;
+    let res = mod_r.remove(&id);
+    if res.is_none() {
+        return (Status::NotFound, "No such package.");
+    }
+    if fs::remove_file(res.unwrap().path).await.is_err() {
+        println!("cannot remove file for module");
+    }
+    (Status::Ok, "Package is deleted.")
+}
+
 #[get("/package/<id>/rate")]
 pub async fn package_rate(
     id: String,
@@ -181,6 +196,23 @@ pub async fn package_rate(
         GoodEngineeringProcess: scores.review,
     };
     (Status::Ok, Either::Left(Json(ret)))
+}
+
+#[delete("/reset")]
+pub async fn package_reset(mod_db: &State<ModuleDB>) -> (Status, &'static str) {
+    let mut write_lock = mod_db.write().await;
+    let del = write_lock.drain();
+    for (k, v) in del {
+        if fs::remove_file(v.path).await.is_err() {
+            println!("cannot remove file for module: {}", k);
+        }
+    }
+    (Status::Ok, "Registry is reset.")
+}
+
+#[put("/authenticate")]
+pub async fn authenticate() -> (Status, &'static str) {
+    (Status::NotImplemented, "Not implemented")
 }
 
 #[get("/package/byName/<name>", rank = 1)]
