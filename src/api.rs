@@ -27,6 +27,30 @@ pub fn test() -> &'static str {
     "Hello, test!"
 }
 
+#[put("/package/<id>")]
+pub async fn pacakge_update(
+    id: String,
+    package: &State<Package>,
+    mod_db: &State<ModuleDB>,
+) -> (Status, &'static str) {
+    let mod_r = mod_db.read().await;
+    let res = mod_r.get(&id);
+    if res.is_none() {
+        return (Status::NotFound, "Package does not exist.");
+    }
+
+    let db = res.unwrap(); 
+
+    if ((package.metadata.Name == db.name) & (package.metadata.Version == db.ver) & (package.metadata.ID == db.id)) {
+        //update the package if metadata matches
+        
+    }
+
+    if map.insert(id, package)
+
+    (Status::Ok, "Version is updated.")
+}
+
 // path forwarding:
 // 1. request with usize offset and valid query -> accept
 // 2. request with non-usize offset and valid query -> 400
