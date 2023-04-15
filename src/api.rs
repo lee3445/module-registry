@@ -59,11 +59,10 @@ pub async fn package_rate(
 #[delete("/reset")]
 pub async fn package_reset(mod_db: &State<ModuleDB>) -> (Status, &'static str) {
     let mut write_lock = mod_db.write().await;
-    write_lock.clear();
-    for module in write_lock.values_mut() {
-        let path = module.path.clone();
-        if fs::remove_file(path).await.is_err() {
-            println!("cannot remove file for module");
+    let del = write_lock.drain();
+    for (k, v) in del {
+        if fs::remove_file(v.path).await.is_err() {
+            println!("cannot remove file for module: {}", k);
         }
     }
     (Status::Ok, "Registry is reset.")
