@@ -1,11 +1,7 @@
 #![allow(non_snake_case)]
-use rocket::data::Outcome;
-use rocket::request;
-use rocket::request::FromRequest;
 use rocket::serde::{Deserialize, Serialize};
-use rocket::Request;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(crate = "rocket::serde")]
 pub struct PackageMetadata {
     pub Name: String,
@@ -33,22 +29,14 @@ pub struct PackageQuery {
     pub Name: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(crate = "rocket::serde")]
 pub struct Package {
     pub metadata: PackageMetadata,
     pub data: PackageData,
 }
 
-impl<'a, 'r> FromRequest<'a, 'r> for Package {
-    type Error = ();
-
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, ()> {
-        Outcome::Success(Self);
-    }
-}
-
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(crate = "rocket::serde")]
 pub struct PackageData {
     pub Content: Option<String>,

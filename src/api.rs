@@ -27,10 +27,10 @@ pub fn test() -> &'static str {
     "Hello, test!"
 }
 
-#[put("/package/<id>")]
+#[put("/package/<id>", data = "<package>")]
 pub async fn package_update(
     id: String,
-    package: Package,
+    package: Json<Package>,
     mod_db: &State<ModuleDB>,
 ) -> (Status, &'static str) {
     let mod_r = mod_db.read().await;
