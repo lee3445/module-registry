@@ -36,6 +36,6 @@ async fn rocket() -> _ {
                 package_by_regex_get,
             ],
         )
-        .register("/packages", catchers![packages_list_422])
+        .register("/", catchers![redirect_422_to_400])
         .manage(database::module_db().await)
 }

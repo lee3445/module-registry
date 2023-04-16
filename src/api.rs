@@ -13,8 +13,8 @@ use rocket::State;
 
 use rocket::tokio::fs;
 
-use std::path::Path;
 use std::io::Read;
+use std::path::Path;
 //#[cfg(test)]
 //mod tests;
 
@@ -114,12 +114,6 @@ pub async fn packages_list_400() -> status::BadRequest<&'static str> {
     status::BadRequest(Some(
         "There is missing field(s) in the PackageQuery/AuthenticationToken/offset or it is formed improperly.",
     ))
-}
-// reroute 422 to 400
-// 422 is possible when passed in invalid query
-#[catch(422)]
-pub fn packages_list_422() -> status::BadRequest<&'static str> {
-    status::BadRequest(Some("Error processing data"))
 }
 // no other way to set custom headers other than this
 #[derive(Responder)]
@@ -260,16 +254,28 @@ pub async fn package_by_regex_get(
                 });
             }
         }
-        Either::Left(Json(ret))
+        if ret.is_empty() {
+            Either::Right((Status::NotFound, "No package found under this regex."))
+        } else {
+            Either::Left(Json(ret))
+        }
     } else {
         Either::Right((Status::BadRequest, "malformed regex"))
     }
 }
-fn match_readme(re: &regex::Regex, path: &str) -> Option<()> {
+// return option so I can use ? in code
+pub fn match_readme(re: &regex::Regex, path: &str) -> Option<()> {
     // zip doesn't work well with async fs
     let mut fp = zip::ZipArchive::new(std::fs::File::open(path).ok()?).ok()?;
     let mut readme = fp.by_name("README.md").ok()?;
     let mut contents = String::new();
     readme.read_to_string(&mut contents).ok()?;
     re.is_match(&contents).then_some(())
+}
+
+// reroute 422 to 400
+// 422 is possible when passed in invalid query
+#[catch(422)]
+pub fn redirect_422_to_400() -> status::BadRequest<&'static str> {
+    status::BadRequest(Some("Error processing data"))
 }
