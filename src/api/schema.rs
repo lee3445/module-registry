@@ -1,5 +1,9 @@
 #![allow(non_snake_case)]
+use rocket::data::Outcome;
+use rocket::request;
+use rocket::request::FromRequest;
 use rocket::serde::{Deserialize, Serialize};
+use rocket::Request;
 
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
@@ -34,6 +38,14 @@ pub struct PackageQuery {
 pub struct Package {
     pub metadata: PackageMetadata,
     pub data: PackageData,
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for Package {
+    type Error = ();
+
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, ()> {
+        Outcome::Success(Self);
+    }
 }
 
 #[derive(Serialize)]
