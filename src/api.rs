@@ -43,8 +43,8 @@ pub async fn package_update(
 
     //update the package if metadata matches
     if (package.metadata.Name == db.name)
-        & (package.metadata.Version == db.ver)
-        & (package.metadata.ID == db.id)
+        && (package.metadata.Version == db.ver)
+        && (package.metadata.ID == db.id)
     {
         base64_to_zip(
             package.data.Content.as_ref().unwrap().as_str(),
@@ -52,9 +52,10 @@ pub async fn package_update(
         )
         .await
         .unwrap();
+        (Status::Ok, "Version is updated.")
+    } else {
+        (Status::NotFound, "Package does not exist.")
     }
-
-    (Status::Ok, "Version is updated.")
 }
 
 // path forwarding:
