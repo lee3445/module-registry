@@ -13,7 +13,7 @@ use rocket::State;
 
 use rocket::tokio::fs;
 
-use std::fmt::write;
+use std::io::Read;
 use std::path::Path;
 //#[cfg(test)]
 //mod tests;
@@ -114,12 +114,6 @@ pub async fn packages_list_400() -> status::BadRequest<&'static str> {
     status::BadRequest(Some(
         "There is missing field(s) in the PackageQuery/AuthenticationToken/offset or it is formed improperly.",
     ))
-}
-// reroute 422 to 400
-// 422 is possible when passed in invalid query
-#[catch(422)]
-pub fn packages_list_422() -> status::BadRequest<&'static str> {
-    status::BadRequest(Some("Error processing data"))
 }
 // no other way to set custom headers other than this
 #[derive(Responder)]
@@ -271,4 +265,48 @@ pub async fn package_by_name_delete(name: String, mod_db: &State<ModuleDB>) -> (
         }
         (Status::Ok, format!("{} package(s) deleted", num_deleted))
     }
+}
+
+#[post("/package/byRegex", data = "<query>")]
+pub async fn package_by_regex_get(
+    query: Json<PackageRegEx>,
+    mod_db: &State<ModuleDB>,
+) -> Either<Json<Vec<PackageMetadata>>, (Status, &'static str)> {
+    let re = regex::Regex::new(&query.RegEx);
+    if let Ok(re) = re {
+        let mut ret = Vec::new();
+        let mod_r = mod_db.read().await;
+        for v in mod_r.values() {
+            if re.is_match(&v.name) || match_readme(&re, &v.path).is_some() {
+                ret.push(PackageMetadata {
+                    Name: v.name.clone(),
+                    ID: v.id.clone(),
+                    Version: v.ver.clone(),
+                });
+            }
+        }
+        if ret.is_empty() {
+            Either::Right((Status::NotFound, "No package found under this regex."))
+        } else {
+            Either::Left(Json(ret))
+        }
+    } else {
+        Either::Right((Status::BadRequest, "malformed regex"))
+    }
+}
+// return option so I can use ? in code
+pub fn match_readme(re: &regex::Regex, path: &str) -> Option<()> {
+    // zip doesn't work well with async fs
+    let mut fp = zip::ZipArchive::new(std::fs::File::open(path).ok()?).ok()?;
+    let mut readme = fp.by_name("README.md").ok()?;
+    let mut contents = String::new();
+    readme.read_to_string(&mut contents).ok()?;
+    re.is_match(&contents).then_some(())
+}
+
+// reroute 422 to 400
+// 422 is possible when passed in invalid query
+#[catch(422)]
+pub fn redirect_422_to_400() -> status::BadRequest<&'static str> {
+    status::BadRequest(Some("Error processing data"))
 }
