@@ -26,14 +26,21 @@ async fn rocket() -> _ {
             routes![
                 world,
                 test,
+                package_retrieve,
+                package_reset,
+                package_delete,
+                authenticate,
                 packages_list,
                 packages_list_bad_offset,
                 packages_list_400,
                 package_rate,
                 package_retrieve,
-                package_update
+                package_update,
+                package_by_name_get,
+                package_by_name_delete,
+                package_by_regex_get,
             ],
         )
-        .register("/packages", catchers![packages_list_422])
+        .register("/", catchers![redirect_422_to_400])
         .manage(database::module_db().await)
 }

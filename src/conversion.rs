@@ -24,20 +24,3 @@ pub async fn zip_to_base64(path: &str) -> std::io::Result<String> {
     file.read_to_end(&mut buffer).await?;
     Ok(general_purpose::STANDARD.encode(&buffer))
 }
-
-/*#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // test base64 conversion
-    #[rocket::async_test]
-    async fn test1() {
-        base64_to_zip("SGVsbG8gV29ybGQhPQ==", "./output/output.txt")
-            .await
-            .unwrap();
-        let mut file = fs::File::open("./output/output.txt").await.unwrap();
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).await.unwrap();
-        assert!(contents == "Hello, world!");
-    }
-}*/
