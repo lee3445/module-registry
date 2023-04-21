@@ -66,16 +66,12 @@
         body: data,
       }).then((resp) => resp.json())
         .then((data) => {
-          console.log(data);
-          /*let table = document.getElementById("modules");
-          let arr = data.data.search.nodes;
-          arr.forEach((item, index, a) => {
-            a[index].owner = a[index].owner.login;
-          });
-          console.log(arr);
+          let table = document.getElementById("modules");
+          let tableData = data;
+          console.log(tableData);
           table.innerHTML = ""; // clear table
-          generateTable(table, arr); // generate the table first
-          generateTableHead(table, Object.keys(arr[0])); // then the head*/
+          generateTable(table, tableData); // generate the table first
+          generateTableHead(table, Object.keys(tableData[0])); // then the head
         });
     }
   </script>
