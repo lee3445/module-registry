@@ -61,12 +61,13 @@
       const data = '[{\"Name\":\"*\"}]';
 
       //https://module-registry-dj65tplq7a-uc.a.run.app/packages
-      fetch("http://0.0.0.0:8080/packages", {
+      fetch("http://127.0.0.1:8000/packages", {
         method: "POST",
         body: data,
       }).then((resp) => resp.json())
         .then((data) => {
-          let table = document.getElementById("modules");
+          console.log(data);
+          /*let table = document.getElementById("modules");
           let arr = data.data.search.nodes;
           arr.forEach((item, index, a) => {
             a[index].owner = a[index].owner.login;
@@ -74,7 +75,7 @@
           console.log(arr);
           table.innerHTML = ""; // clear table
           generateTable(table, arr); // generate the table first
-          generateTableHead(table, Object.keys(arr[0])); // then the head
+          generateTableHead(table, Object.keys(arr[0])); // then the head*/
         });
     }
   </script>
