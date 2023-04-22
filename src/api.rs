@@ -44,18 +44,27 @@ pub async fn package_update(
 
     let db = res.unwrap();
 
-    //update the package if metadata matches
     if (package.metadata.Name == db.name)
         && (package.metadata.Version == db.ver)
         && (package.metadata.ID == db.id)
     {
-        if let Ok(_) = base64_to_zip(
-            package.data.Content.as_ref().unwrap().as_str(),
-            db.path.as_str(),
-        )
-        .await
-        {
-            (Status::Ok, "Version is updated.")
+        // if Content field is set
+        if package.data.Content != None {
+            if let Ok(_) = base64_to_zip(
+                package.data.Content.as_ref().unwrap().as_str(),
+                db.path.as_str(),
+            )
+            .await
+            {
+                (Status::Ok, "Version is updated.")
+            } else {
+                (Status::NotFound, "Package does not exist.")
+            }
+        }
+        // if URL field is set
+        else if package.data.Content == None && package.data.URL != None {
+            // IN PROGRESS:
+            return (Status::Ok, "Version is updated.");
         } else {
             (Status::NotFound, "Package does not exist.")
         }
