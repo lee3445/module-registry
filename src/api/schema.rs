@@ -40,6 +40,6 @@ pub struct Package {
 #[serde(crate = "rocket::serde")]
 pub struct PackageData {
     pub Content: Option<String>,
-    pub URL: String,
-    pub JSProgram: Option<String>,
+    pub URL: Option<String>,
+    pub JSProgram: String,
 }

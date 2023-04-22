@@ -181,8 +181,15 @@ pub async fn package_retrieve(
     };
     let data = PackageData {
         Content: Some(zip_to_base64(db.path.as_str()).await.unwrap()),
-        URL: db.url.clone(),
-        JSProgram: None,
+        URL: None, //db.url.clone(),
+        JSProgram: "if (process.argv.length === 7) {
+            console.log('Success')
+            process.exit(0)
+            } else {
+            console.log('Failed')
+            process.exit(1)
+            }"
+        .to_string(),
     };
     let response = Package { metadata, data };
     (Status::Ok, Either::Left(Json(response)))
