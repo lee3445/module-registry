@@ -10,3 +10,5 @@ cli = { version = "0.1.0", path = "cli" }
 rocket = { version = "0.5.0-rc.2", features = ["json"] }
 tokio = { version = "1.25.0", features = ["macros"] }
 base64 = "0.21.0"
+regex = "1.7.3"
+zip = "0.6.4"
