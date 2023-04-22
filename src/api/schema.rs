@@ -38,7 +38,6 @@ pub struct PackageHistoryEntry {
     pub Action: String,
 }
 
-
 #[derive(Deserialize, Clone)]
 #[serde(crate = "rocket::serde")]
 pub struct PackageQuery {
@@ -64,5 +63,5 @@ pub struct Package {
 pub struct PackageData {
     pub Content: Option<String>,
     pub URL: Option<String>,
-    pub JSProgram: String,
+    pub JSProgram: Option<String>,
 }

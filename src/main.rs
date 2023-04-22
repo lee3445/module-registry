@@ -18,7 +18,7 @@ async fn rocket() -> _ {
         .unwrap_or(8080);
     let figment = rocket::Config::figment()
         .merge(("port", port))
-        .merge(("address", "0.0.0.0"));
+        .merge(("address", "127.0.0.1"));
 
     rocket::custom(figment)
         .mount(
@@ -34,7 +34,6 @@ async fn rocket() -> _ {
                 packages_list_bad_offset,
                 packages_list_400,
                 package_rate,
-                package_retrieve,
                 package_update,
                 package_by_name_get,
                 package_by_name_delete,

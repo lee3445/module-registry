@@ -64,6 +64,8 @@ pub async fn package_update(
         // if URL field is set
         else if package.data.Content == None && package.data.URL != None {
             // IN PROGRESS:
+            let path: &Path = std::path::Path::new(&db.path);
+            git2::Repository::clone(package.data.URL.as_ref().unwrap().as_str(), path).unwrap();
             return (Status::Ok, "Version is updated.");
         } else {
             (Status::NotFound, "Package does not exist.")
@@ -188,14 +190,16 @@ pub async fn package_retrieve(
     let data = PackageData {
         Content: Some(zip_to_base64(db.path.as_str()).await.unwrap()),
         URL: None, //db.url.clone(),
-        JSProgram: "if (process.argv.length === 7) {
+        JSProgram: Some(
+            "if (process.argv.length === 7) {
             console.log('Success')
             process.exit(0)
             } else {
             console.log('Failed')
             process.exit(1)
             }"
-        .to_string(),
+            .to_string(),
+        ),
     };
     let response = Package { metadata, data };
     (Status::Ok, Either::Left(Json(response)))
