@@ -76,6 +76,7 @@ impl Module {
         let scores = cli::rate(&url, &std::env::var("GITHUB_TOKEN").unwrap()).await?;
         let packageid = id.clone();
         Some(Self {
+            name: packageid.clone(),
             id,
             url,
             path: format!("./packages/{packageid}.zip"),
