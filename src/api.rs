@@ -361,7 +361,7 @@ pub async fn package_by_name_delete(name: String, mod_db: &State<ModuleDB>) -> (
     }
 }
 
-#[post("/package/byRegex", data = "<query>")]
+#[post("/package/byRegEx", data = "<query>")]
 pub async fn package_by_regex_get(
     query: Json<PackageRegEx>,
     mod_db: &State<ModuleDB>,
@@ -392,7 +392,9 @@ pub async fn package_by_regex_get(
 pub fn match_readme(re: &regex::Regex, path: &str) -> Option<()> {
     // zip doesn't work well with async fs
     let mut fp = zip::ZipArchive::new(std::fs::File::open(path).ok()?).ok()?;
-    let mut readme = fp.by_name("README.md").ok()?;
+    let name_re = regex::Regex::new("(?i).+/readme.md").unwrap();
+    let name = fp.file_names().find(|a| name_re.is_match(a))?.to_string();
+    let mut readme = fp.by_name(&name).ok()?;
     let mut contents = String::new();
     readme.read_to_string(&mut contents).ok()?;
     re.is_match(&contents).then_some(())
