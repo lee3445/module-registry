@@ -151,18 +151,49 @@ pub async fn working() -> bool {
 }
 
 pub async fn rate(url: &str, token: &str) -> Option<GithubRepo> {
+    let (owner, repo) = extract_owner_and_repo(url).await?;
+
+    // calculate metrics
+    let scores = vec![-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0];
+    let mut github = GithubRepo::new(url.to_string(), scores);
+    calc_metrics(&mut github, token.to_string(), owner, repo).await;
+    Some(github)
+}
+
+// fn read_github_repos_from_file(filename: &str) -> Vec<GithubRepo> {
+//     let file = match File::open(filename) {
+//         Ok(file) => file,
+//         Err(err) => {
+//             println!("Error opening file: {}", err);
+//             return vec![];
+//         }
+//     };
+//
+//     let reader = BufReader::new(file);
+//
+//     let mut repos = vec![];
+//     for line in reader.lines() {
+//         let line = line.unwrap();
+//         let scores = vec![-1.0, -1.0, -1.0, -1.0, -1.0, -1.0];
+//         let repo = GithubRepo::new(line, scores);
+//         repos.push(repo);
+//     }
+//
+//     repos
+// }
+pub async fn extract_owner_and_repo(url: &str) -> Option<(String, String)> {
     let u = reqwest::Url::parse(url).ok()?;
     let sch = u.scheme();
     if sch != "https" {
         return None;
     }
 
-    // check domain
+    // get github url
     let ghurl: String;
     if let Some(domain) = u.domain() {
         if domain == "www.npmjs.com" {
             // handle npm URLs
-            let npm_url = url.replace(
+            let npm_url = url.to_string().replace(
                 "https://www.npmjs.com/package/",
                 "https://registry.npmjs.org/",
             );
@@ -193,41 +224,22 @@ pub async fn rate(url: &str, token: &str) -> Option<GithubRepo> {
     } else {
         return None;
     }
-    let (owner, repo) = extract_owner_and_repo(&ghurl)?;
-
-    // calculate metrics
-    let scores = vec![-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0];
-    let mut github = GithubRepo::new(url.to_string(), scores);
-    calc_metrics(&mut github, token.to_string(), owner, repo).await;
-    Some(github)
-}
-
-// fn read_github_repos_from_file(filename: &str) -> Vec<GithubRepo> {
-//     let file = match File::open(filename) {
-//         Ok(file) => file,
-//         Err(err) => {
-//             println!("Error opening file: {}", err);
-//             return vec![];
-//         }
-//     };
-//
-//     let reader = BufReader::new(file);
-//
-//     let mut repos = vec![];
-//     for line in reader.lines() {
-//         let line = line.unwrap();
-//         let scores = vec![-1.0, -1.0, -1.0, -1.0, -1.0, -1.0];
-//         let repo = GithubRepo::new(line, scores);
-//         repos.push(repo);
-//     }
-//
-//     repos
-// }
-fn extract_owner_and_repo(url: &str) -> Option<(String, String)> {
     let re = Regex::new(r"https://github.com/([^/]+)/([^/]+)/?").unwrap();
-    let captures = re.captures(url)?;
+    let captures = re.captures(&ghurl)?;
 
     Some((captures[1].to_string(), captures[2].to_string()))
+}
+
+pub async fn wget(url: &str, path: &str) -> Option<()> {
+    let ret = reqwest::get(url).await.ok()?;
+    if !ret.status().is_success() {
+        return None;
+    }
+    let mut wrt = tokio::fs::File::create(path).await.ok()?;
+    tokio::io::copy(&mut ret.bytes().await.ok()?.as_ref(), &mut wrt)
+        .await
+        .ok()
+        .and_then(|_| Some(()))
 }
 
 // #[tokio::main]

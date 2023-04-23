@@ -1,7 +1,7 @@
 mod schema;
 
 use crate::conversion::*;
-use crate::database::{get_by_name, ModuleDB};
+use crate::database::{get_by_name, Module, ModuleDB};
 use schema::*;
 
 use rocket::fs::{relative, NamedFile};
@@ -26,7 +26,7 @@ pub async fn world() -> Option<NamedFile> {
 }
 
 #[get("/test")]
-pub fn test() -> &'static str {
+pub async fn test() -> &'static str {
     "Hello, test!"
 }
 
@@ -63,12 +63,61 @@ pub async fn package_update(
         }
         // if URL field is set
         else if package.data.Content == None && package.data.URL != None {
-            // IN PROGRESS:
-            let path: &Path = std::path::Path::new(&db.path);
-            git2::Repository::clone(package.data.URL.as_ref().unwrap().as_str(), path).unwrap();
-            return (Status::Ok, "Version is updated.");
+            if let Some((owner, repo)) =
+                cli::extract_owner_and_repo(package.data.URL.as_ref().unwrap()).await
+            {
+                // update moduledb
+                // weirdly layered to avoid overwritting the old file, then realizing that it
+                // doesn't match metrics requirement
+                if let Some(m) = Module::new(
+                    package.metadata.ID.clone(),
+                    package.data.URL.clone().unwrap(),
+                )
+                .await
+                {
+                    // download package from main or master branch
+                    println!("start downloading zip");
+                    if cli::wget(
+                        &format!(
+                            "https://github.com/{}/{}/archive/refs/heads/main.zip",
+                            owner, repo
+                        ),
+                        &db.path,
+                    )
+                    .await
+                    .is_none()
+                    {
+                        if cli::wget(
+                            &format!(
+                                "https://github.com/{}/{}/archive/refs/heads/master.zip",
+                                owner, repo
+                            ),
+                            &db.path,
+                        )
+                        .await
+                        .is_none()
+                        {
+                            return (Status::BadRequest, "Bad Request");
+                        }
+                    }
+                    println!("finish downloading zip");
+
+                    // write entry in moduledb
+                    drop(mod_r); // drop read lock before aquiring write lock
+                    let mut mod_w = mod_db.write().await;
+                    mod_w.insert(package.metadata.ID.clone(), m);
+                    return (Status::Ok, "Version is updated.");
+                } else {
+                    return (Status::BadRequest, "Cannot create entry in database");
+                }
+            } else {
+                return (Status::BadRequest, "Bad URL");
+            }
         } else {
-            (Status::NotFound, "Package does not exist.")
+            (
+                Status::BadRequest,
+                "At least one of Content or URL should be set",
+            )
         }
     } else {
         (Status::NotFound, "Package does not exist.")
@@ -190,16 +239,7 @@ pub async fn package_retrieve(
     let data = PackageData {
         Content: Some(zip_to_base64(db.path.as_str()).await.unwrap()),
         URL: None, //db.url.clone(),
-        JSProgram: Some(
-            "if (process.argv.length === 7) {
-            console.log('Success')
-            process.exit(0)
-            } else {
-            console.log('Failed')
-            process.exit(1)
-            }"
-            .to_string(),
-        ),
+        JSProgram: Some(String::new()),
     };
     let response = Package { metadata, data };
     (Status::Ok, Either::Left(Json(response)))
@@ -321,7 +361,7 @@ pub async fn package_by_name_delete(name: String, mod_db: &State<ModuleDB>) -> (
     }
 }
 
-#[post("/package/byRegex", data = "<query>")]
+#[post("/package/byRegEx", data = "<query>")]
 pub async fn package_by_regex_get(
     query: Json<PackageRegEx>,
     mod_db: &State<ModuleDB>,
@@ -352,7 +392,9 @@ pub async fn package_by_regex_get(
 pub fn match_readme(re: &regex::Regex, path: &str) -> Option<()> {
     // zip doesn't work well with async fs
     let mut fp = zip::ZipArchive::new(std::fs::File::open(path).ok()?).ok()?;
-    let mut readme = fp.by_name("README.md").ok()?;
+    let name_re = regex::Regex::new("(?i).+/readme.md").unwrap();
+    let name = fp.file_names().find(|a| name_re.is_match(a))?.to_string();
+    let mut readme = fp.by_name(&name).ok()?;
     let mut contents = String::new();
     readme.read_to_string(&mut contents).ok()?;
     re.is_match(&contents).then_some(())

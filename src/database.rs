@@ -72,8 +72,7 @@ pub struct Module {
 
 impl Module {
     // initialize struct
-    // TODO: add path
-    async fn new(id: String, url: String) -> Option<Self> {
+    pub async fn new(id: String, url: String) -> Option<Self> {
         let scores = cli::rate(&url, &std::env::var("GITHUB_TOKEN").unwrap()).await?;
         let packageid = id.clone();
         Some(Self {
