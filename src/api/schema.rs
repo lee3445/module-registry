@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 use rocket::serde::{Deserialize, Serialize};
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(crate = "rocket::serde")]
 pub struct PackageMetadata {
     pub Name: String,
@@ -38,7 +38,6 @@ pub struct PackageHistoryEntry {
     pub Action: String,
 }
 
-
 #[derive(Deserialize, Clone)]
 #[serde(crate = "rocket::serde")]
 pub struct PackageQuery {
@@ -52,18 +51,17 @@ pub struct PackageRegEx {
     pub RegEx: String,
 }
 
-
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(crate = "rocket::serde")]
 pub struct Package {
     pub metadata: PackageMetadata,
     pub data: PackageData,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(crate = "rocket::serde")]
 pub struct PackageData {
     pub Content: Option<String>,
-    pub URL: String,
+    pub URL: Option<String>,
     pub JSProgram: Option<String>,
 }

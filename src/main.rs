@@ -12,7 +12,6 @@ use api::*;
 
 #[launch]
 async fn rocket() -> _ {
-
     let port: u32 = std::env::var("PORT")
         .ok()
         .and_then(|p| p.parse::<u32>().ok())
@@ -35,6 +34,7 @@ async fn rocket() -> _ {
                 packages_list_bad_offset,
                 packages_list_400,
                 package_rate,
+                package_update,
                 package_by_name_get,
                 package_by_name_delete,
                 package_by_regex_get,
