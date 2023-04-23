@@ -30,6 +30,92 @@ pub async fn test() -> &'static str {
     "Hello, test!"
 }
 
+#[post("/package/<id>", data = "<package>")]
+pub async fn package_create(
+    id: String,
+    package: Json<Package>,
+    mod_db: &State<ModuleDB>,
+) -> (Status, &'static str) {
+    let mod_r = mod_db.read().await;
+    let res = mod_r.get(&id);
+    if res.is_none() {
+        return (Status::NotFound, "Package does not exist.");
+    }
+
+    let db = res.unwrap();
+
+    if package.data.Content != None {
+        if let Ok(_) = base64_to_zip(
+            package.data.Content.as_ref().unwrap().as_str(),
+            db.path.as_str(),
+        )
+        .await
+        {
+            (Status::Ok, "Version is updated.")
+        } else {
+            (Status::NotFound, "Package does not exist.")
+        }
+    }
+    // if URL field is set
+    else if package.data.Content == None && package.data.URL != None {
+        if let Some((owner, repo)) =
+            cli::extract_owner_and_repo(package.data.URL.as_ref().unwrap()).await
+        {
+            // update moduledb
+            // weirdly layered to avoid overwritting the old file, then realizing that it
+            // doesn't match metrics requirement
+            if let Some(m) = Module::new(
+                package.metadata.ID.clone(),
+                package.data.URL.clone().unwrap(),
+            )
+            .await
+            {
+                // download package from main or master branch
+                println!("start downloading zip");
+                if cli::wget(
+                    &format!(
+                        "https://github.com/{}/{}/archive/refs/heads/main.zip",
+                        owner, repo
+                    ),
+                    &db.path,
+                )
+                .await
+                .is_none()
+                {
+                    if cli::wget(
+                        &format!(
+                            "https://github.com/{}/{}/archive/refs/heads/master.zip",
+                            owner, repo
+                        ),
+                        &db.path,
+                    )
+                    .await
+                    .is_none()
+                    {
+                        return (Status::BadRequest, "Bad Request");
+                    }
+                }
+                println!("finish downloading zip");
+
+                // write entry in moduledb
+                drop(mod_r); // drop read lock before aquiring write lock
+                let mut mod_w = mod_db.write().await;
+                mod_w.insert(package.metadata.ID.clone(), m);
+                return (Status::Ok, "Version is updated.");
+            } else {
+                return (Status::BadRequest, "Cannot create entry in database");
+            }
+        } else {
+            return (Status::BadRequest, "Bad URL");
+        }
+    } else {
+        (
+            Status::BadRequest,
+            "At least one of Content or URL should be set",
+        )
+    }
+}
+
 #[put("/package/<id>", data = "<package>")]
 pub async fn package_update(
     id: String,
