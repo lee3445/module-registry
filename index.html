@@ -13,7 +13,7 @@
   <br>
   <table id="modules" , width="100%">
   </table>
-
+  <p id="search_response"></p>
 
   <script>
     // generate table with js
@@ -58,21 +58,36 @@
       const search = document.getElementById("search").value;
       const token = document.getElementById("tok").value;
       //const data = `{\"query\" : \"query { search(query: \\\"${search} in:name\\\" type:REPOSITORY first:20) { nodes { ... on Repository { name owner {login} url } } } }\" }`;
-      const data = '[{\"Name\":\"*\"}]';
+      if (search.trim() === "") {
+        data = '[{\"Name\":\"*\"}]';
+      } else {
+        data = JSON.stringify([{ Name: search }]);
+      }
+      console.log(data);
 
+      //http://127.0.0.1:8000/packages
       //https://module-registry-dj65tplq7a-uc.a.run.app/packages
-      fetch("http://127.0.0.1:8000/packages", {
+      fetch("https://module-registry-dj65tplq7a-uc.a.run.app/packages", {
         method: "POST",
         body: data,
-      }).then((resp) => resp.json())
-        .then((data) => {
+      }).then((resp) => {
+        if (resp.status === 400) {
           let table = document.getElementById("modules");
-          let tableData = data;
-          console.log(tableData);
           table.innerHTML = ""; // clear table
-          generateTable(table, tableData); // generate the table first
-          generateTableHead(table, Object.keys(tableData[0])); // then the head
-        });
+          let par = document.getElementById("search_response");
+          par.innerHTML = "No matches found"
+        }
+        return resp.json();
+      }).then((data) => {
+        let table = document.getElementById("modules");
+        let par = document.getElementById("search_response");
+        let tableData = data;
+        console.log(tableData);
+        table.innerHTML = ""; // clear table
+        par.innerHTML = ""; // clear response
+        generateTable(table, tableData); // generate the table first
+        generateTableHead(table, Object.keys(tableData[0])); // then the head
+      });
     }
   </script>
 </body>

@@ -18,10 +18,10 @@ async fn rocket() -> _ {
     let port: u32 = std::env::var("PORT")
         .ok()
         .and_then(|p| p.parse::<u32>().ok())
-        .unwrap_or(8000);
+        .unwrap_or(8080);
     let figment = rocket::Config::figment()
         .merge(("port", port))
-        .merge(("address", "127.0.0.1"));
+        .merge(("address", "0.0.0.0"));
 
     rocket::custom(figment)
         .mount(
