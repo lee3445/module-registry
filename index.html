@@ -7,8 +7,8 @@
 </head>
 
 <body>
-  Search github repo: <input type="text" id="search" name="search" />
-  GitHub Token: <input type="text" id="tok" name="tok" />
+  Search from existing repo: <input type="text" id="search" name="search" />
+  <!--GitHub Token: <input type="text" id="tok" name="tok" />-->
   <button type="button" onclick="loadTable()">Search</button> <br>
   <br>
   <table id="modules" , width="100%">
@@ -56,7 +56,7 @@
       // });
 
       const search = document.getElementById("search").value;
-      const token = document.getElementById("tok").value;
+      //const token = document.getElementById("tok").value;
       //const data = `{\"query\" : \"query { search(query: \\\"${search} in:name\\\" type:REPOSITORY first:20) { nodes { ... on Repository { name owner {login} url } } } }\" }`;
       if (search.trim() === "") {
         data = '[{\"Name\":\"*\"}]';
