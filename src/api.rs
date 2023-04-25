@@ -27,7 +27,14 @@ pub async fn world() -> Option<NamedFile> {
 
 #[get("/test")]
 pub async fn test() -> &'static str {
-    "Hello, test!"
+    println!(
+        "{:?}",
+        get_package_name(
+            "/home/albert/Documents/purdue/4sp/ECE461/module-registry/packages/postcss.zip"
+        )
+    );
+
+    "cool"
 }
 
 #[post("/package/<id>", data = "<package>")]
@@ -123,6 +130,21 @@ pub async fn package_create(
     else {
         return (Status::Conflict, "Package exists already.");
     }
+}
+
+fn get_package_name(path: &str) -> Option<String> {
+    // search for package.json in zip file
+    let mut fp = zip::ZipArchive::new(std::fs::File::open(path).ok()?).ok()?;
+    let name_re = regex::Regex::new(".+/package\\.json").unwrap();
+    let name = fp.file_names().find(|a| name_re.is_match(a))?.to_string();
+    let mut file = fp.by_name(&name).ok()?;
+
+    // parse contents to json
+    let mut content = String::new();
+    file.read_to_string(&mut content).ok()?;
+    let data: rocket::figment::value::Value = rocket::serde::json::from_str(&content).ok()?;
+
+    data.find("name")?.into_string()
 }
 
 #[put("/package/<id>", data = "<package>")]
