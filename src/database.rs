@@ -1,6 +1,6 @@
 use rocket::tokio::sync::RwLock;
 use std::collections::HashMap;
-
+use api
 pub type ModuleDB = RwLock<HashMap<String, Module>>;
 
 // create empty ModuleDB
@@ -14,7 +14,6 @@ pub async fn module_db() -> ModuleDB {
     hm.insert(
         "postcss".to_string(),
         Module::new(
-            "postcss".to_string(),
             "https://www.npmjs.com/package/postcss".to_string(),
         )
         .await
@@ -72,25 +71,33 @@ pub struct Module {
 
 impl Module {
     // initialize struct
-    pub async fn new(id: String, url: String) -> Option<Self> {
-        let scores = cli::rate(&url, &std::env::var("GITHUB_TOKEN").unwrap()).await?;
-        let packageid = id.clone();
-        Some(Self {
-            name: packageid.clone(),
-            id,
-            url,
-            path: format!("./packages/{packageid}.zip"),
-            overall: scores.overall() as f64,
-            bus: scores.bus() as f64,
-            correct: scores.correct() as f64,
-            license: scores.license() as f64,
-            responsive: scores.responsive() as f64,
-            rampup: scores.rampup() as f64,
-            version: scores.version() as f64,
-            review: scores.review() as f64,
-
-            ..Default::default()
-        })
+    pub async fn new(url: String) -> Option<Self> {
+        let scores: cli::GithubRepo = cli::rate(&url, &std::env::var("GITHUB_TOKEN").unwrap()).await?;
+        if let Some((owner, repo)) =
+                cli::extract_owner_and_repo(&url).await
+            {
+                Some(Self {
+                    name: format!("{owner}_{repo}"),
+                    id: format!("{owner}_{repo}"),
+                    url,
+                    path: format!("./packages/{owner}_{repo}.zip"),
+                    overall: scores.overall() as f64,
+                    bus: scores.bus() as f64,
+                    correct: scores.correct() as f64,
+                    license: scores.license() as f64,
+                    responsive: scores.responsive() as f64,
+                    rampup: scores.rampup() as f64,
+                    version: scores.version() as f64,
+                    review: scores.review() as f64,
+        
+                    ..Default::default()
+                })
+            }
+            else {
+                None
+            }
+        
+        
     }
 }
 

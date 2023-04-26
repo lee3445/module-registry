@@ -13,6 +13,7 @@ use rocket::State;
 
 use rocket::tokio::fs;
 
+use std::fs;
 use std::io::Read;
 use std::path::Path;
 //#[cfg(test)]
@@ -41,45 +42,106 @@ pub async fn test() -> &'static str {
 pub async fn package_create(
     package: Json<PackageData>,
     mod_db: &State<ModuleDB>,
-) -> (Status, &'static str) {
+) -> (Status, Either<Json<Package>, &'static str>) {
     let mod_r = mod_db.read().await;
-    let res = mod_r.get();
 
-    // let red = mod_r.contains_key(k);
-    // how do we check if the id already exist? we need to know the id of the package before hand?
+    // if Content field is set
+    if package.Content != None && package.URL == None {
+        if let Ok(_) = base64_to_zip(
+            package.Content.as_ref().unwrap().as_str(),
+            "./temp_ece461.zip",
+        )
+        .await
+        {
+            let (name, version) = get_package_name("./temp_ece461.zip");
+            let url = format!("https://www.npmjs.com/package/{:?}", name);
 
-    // if package doesn't exist
-    if res.is_none() {
-        let db = res.unwrap();
-        // if Content field is set
-        if package.Content != None && package.URL == None {
-            // upload content
-            if let Ok(_) =
-                base64_to_zip(package.Content.as_ref().unwrap().as_str(), db.path.as_str()).await
-            {
-                (Status::Ok, "Version is updated.")
+            if let Some(m) = Module::new(url).await {
+                // if the metric matches the expectations
+                if m.overall >= 0.5 {
+                    // write entry in moduledb
+                    drop(mod_r); // drop read lock before aquiring write lock
+                    let mut mod_w = mod_db.write().await;
+                    // if not in the database then add it
+                    if !mod_w.contains_key(&m.id) {
+                        if let Ok(_) = base64_to_zip(
+                            package.Content.as_ref().unwrap().as_str(),
+                            m.path.as_str(),
+                        )
+                        .await
+                        {
+                            // insert to database
+                            mod_w.insert(m.id, m);
+                            let mut res = mod_w.get(&m.id).unwrap();
+                            res.ver = version.unwrap_or("0".to_string());
+
+                            let metadata = PackageMetadata {
+                                Name: m.name.clone(),
+                                Version: m.ver.clone(),
+                                ID: m.id.clone(),
+                            };
+                            let data = PackageData {
+                                Content: Some(zip_to_base64(m.path.as_str()).await.unwrap()),
+                                URL: None, //db.url.clone(),
+                                JSProgram: Some(String::new()),
+                            };
+                            let response = Package { metadata, data };
+                            fs::remove_file("./temp_ece461.zip");
+                            return (Status::Created, Either::Left(Json(response)));
+                        } else {
+                            fs::remove_file("./temp_ece461.zip");
+                            return (
+                                Status::BadRequest,
+                                Either::Right("Failed to convert Content"),
+                            );
+                        }
+                    } else {
+                        fs::remove_file("./temp_ece461.zip");
+                        return (Status::BadRequest, Either::Right("Package exists already."));
+                    }
+                } else {
+                    fs::remove_file("./temp_ece461.zip");
+                    return (
+                        Status::FailedDependency,
+                        Either::Right("Package is not uploaded due to the disqualified rating."),
+                    );
+                }
             } else {
-                (Status::NotFound, "Package does not exist.")
+                fs::remove_file("./temp_ece461.zip");
+                return (
+                    Status::BadRequest,
+                    Either::Right("Cannot create entry in database"),
+                );
             }
-
-            // insert into hashmap/database
-            // let metadata = PackageMetadata {
-            //     Name: get_package_name(),
-            // };
+        } else {
+            return (
+                Status::BadRequest,
+                Either::Right("Failed to convert Content"),
+            );
         }
-        // if URL field is set
-        else if package.Content == None && package.URL != None {
-            if let Some((owner, repo)) =
-                cli::extract_owner_and_repo(package.URL.as_ref().unwrap()).await
-            {
-                // update moduledb
-                // weirdly layered to avoid overwritting the old file, then realizing that it
-                // doesn't match metrics requirement
-                if let Some(m) =
-                    Module::new(package.metadata.ID.clone(), package.URL.clone().unwrap()).await
-                {
-                    // if the metric matches the expectations
-                    if m.overall >= 0.5 {
+    }
+    // if URL field is set
+    else if package.Content == None && package.URL != None {
+        if let Some((owner, repo)) =
+            cli::extract_owner_and_repo(package.URL.as_ref().unwrap()).await
+        {
+            // update moduledb
+            // weirdly layered to avoid overwritting the old file, then realizing that it
+            // doesn't match metrics requirement
+
+            if let Some(m) = Module::new(package.URL.clone().unwrap()).await {
+                // if the metric matches the expectations
+                if m.overall >= 0.5 {
+                    let (name, version) = get_package_name(&m.path);
+                    drop(mod_r); // drop read lock before aquiring write lock
+                    let mut mod_w = mod_db.write().await;
+                    // if the package is not in the database
+                    if !mod_w.contains_key(&m.id) {
+                        // insert into hashmap
+                        mod_w.insert(m.id, m);
+                        let mut res = mod_w.get(&m.id).unwrap();
+                        res.ver = version.unwrap_or("0".to_string());
+
                         // download package from main or master branch
                         println!("start downloading zip");
                         if cli::wget(
@@ -87,7 +149,7 @@ pub async fn package_create(
                                 "https://github.com/{}/{}/archive/refs/heads/main.zip",
                                 owner, repo
                             ),
-                            &db.path,
+                            &m.path,
                         )
                         .await
                         .is_none()
@@ -97,44 +159,55 @@ pub async fn package_create(
                                     "https://github.com/{}/{}/archive/refs/heads/master.zip",
                                     owner, repo
                                 ),
-                                &db.path,
+                                &m.path,
                             )
                             .await
                             .is_none()
                             {
-                                return (Status::BadRequest, "Bad Request");
+                                return (Status::BadRequest, Either::Right("Bad Request"));
                             }
                         }
                         println!("finish downloading zip");
 
-                        // write entry in moduledb
-                        drop(mod_r); // drop read lock before aquiring write lock
-                        let mut mod_w = mod_db.write().await;
-                        mod_w.insert(package.metadata.ID.clone(), m);
-                        return (Status::Ok, "Version is updated.");
+                        let metadata = PackageMetadata {
+                            Name: m.name.clone(),
+                            Version: m.ver.clone(),
+                            ID: m.id.clone(),
+                        };
+                        let data = PackageData {
+                            Content: Some(zip_to_base64(m.path.as_str()).await.unwrap()),
+                            URL: None, //db.url.clone(),
+                            JSProgram: Some(String::new()),
+                        };
+                        let response = Package { metadata, data };
+                        return (Status::Created, Either::Left(Json(response)));
                     } else {
-                        return (
-                            Status::FailedDependency,
-                            "Package is not uploaded due to the disqualified rating.",
-                        );
+                        return (Status::Conflict, Either::Right("Package exists already."));
                     }
                 } else {
-                    return (Status::BadRequest, "Cannot create entry in database");
+                    return (
+                        Status::FailedDependency,
+                        Either::Right("Package is not uploaded due to the disqualified rating."),
+                    );
                 }
             } else {
-                return (Status::BadRequest, "Bad URL");
+                return (
+                    Status::BadRequest,
+                    Either::Right("Cannot create entry in database"),
+                );
             }
         } else {
-            (Status::BadRequest, "Either Content or URL should be set.")
+            return (Status::BadRequest, Either::Right("Invalid URL"));
         }
-    }
-    // else package exist then return
-    else {
-        return (Status::Conflict, "Package exists already.");
+    } else {
+        (
+            Status::BadRequest,
+            Either::Right("Either Content or URL should be set."),
+        )
     }
 }
 
-fn get_package_name(path: &str) -> Option<String> {
+fn get_package_name(path: &str) -> (Option<String>, Option<String>) {
     // search for package.json in zip file
     let mut fp = zip::ZipArchive::new(std::fs::File::open(path).ok()?).ok()?;
     let name_re = regex::Regex::new(".+/package\\.json").unwrap();
@@ -146,7 +219,10 @@ fn get_package_name(path: &str) -> Option<String> {
     file.read_to_string(&mut content).ok()?;
     let data: rocket::figment::value::Value = rocket::serde::json::from_str(&content).ok()?;
 
-    data.find("name")?.into_string()
+    (
+        data.find("name")?.into_string(),
+        data.find("version")?.into_string(),
+    )
 }
 
 #[put("/package/<id>", data = "<package>")]
