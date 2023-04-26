@@ -37,44 +37,46 @@ pub async fn test() -> &'static str {
     "cool"
 }
 
-#[post("/package/<id>", data = "<package>")]
+#[post("/package", data = "<package>")]
 pub async fn package_create(
-    id: String,
-    package: Json<Package>,
+    package: Json<PackageData>,
     mod_db: &State<ModuleDB>,
 ) -> (Status, &'static str) {
     let mod_r = mod_db.read().await;
-    let res = mod_r.get(&id);
+    let res = mod_r.get();
+
+    // let red = mod_r.contains_key(k);
+    // how do we check if the id already exist? we need to know the id of the package before hand?
 
     // if package doesn't exist
     if res.is_none() {
         let db = res.unwrap();
         // if Content field is set
-        if package.data.Content != None && package.data.URL == None {
-            if let Ok(_) = base64_to_zip(
-                package.data.Content.as_ref().unwrap().as_str(),
-                db.path.as_str(),
-            )
-            .await
+        if package.Content != None && package.URL == None {
+            // upload content
+            if let Ok(_) =
+                base64_to_zip(package.Content.as_ref().unwrap().as_str(), db.path.as_str()).await
             {
                 (Status::Ok, "Version is updated.")
             } else {
                 (Status::NotFound, "Package does not exist.")
             }
+
+            // insert into hashmap/database
+            // let metadata = PackageMetadata {
+            //     Name: get_package_name(),
+            // };
         }
         // if URL field is set
-        else if package.data.Content == None && package.data.URL != None {
+        else if package.Content == None && package.URL != None {
             if let Some((owner, repo)) =
-                cli::extract_owner_and_repo(package.data.URL.as_ref().unwrap()).await
+                cli::extract_owner_and_repo(package.URL.as_ref().unwrap()).await
             {
                 // update moduledb
                 // weirdly layered to avoid overwritting the old file, then realizing that it
                 // doesn't match metrics requirement
-                if let Some(m) = Module::new(
-                    package.metadata.ID.clone(),
-                    package.data.URL.clone().unwrap(),
-                )
-                .await
+                if let Some(m) =
+                    Module::new(package.metadata.ID.clone(), package.URL.clone().unwrap()).await
                 {
                     // if the metric matches the expectations
                     if m.overall >= 0.5 {
