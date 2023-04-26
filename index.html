@@ -14,8 +14,10 @@
   <table id="modules" , width="100%">
   </table>
   <p id="search_response"></p>
+  <button type="button" id="next" onclick="loadNext()" disabled>Next</button> <br>
 
   <script>
+    var offset = ""
     // generate table with js
     // https://www.valentinog.com/blog/html-table/
     function generateTableHead(table, data) {
@@ -72,10 +74,59 @@
         body: data,
       }).then((resp) => {
         if (resp.status === 400) {
+          document.getElementById("next").disabled = true;
           let table = document.getElementById("modules");
           table.innerHTML = ""; // clear table
           let par = document.getElementById("search_response");
           par.innerHTML = "No matches found"
+        }
+        else {
+          offset = resp.headers.get("offset");
+          if (offset === "") {
+            document.getElementById("next").disabled = true;
+          } else {
+            document.getElementById("next").disabled = false;
+          }
+        }
+        return resp.json();
+      }).then((data) => {
+        let table = document.getElementById("modules");
+        let par = document.getElementById("search_response");
+        let tableData = data;
+        console.log(tableData);
+        table.innerHTML = ""; // clear table
+        par.innerHTML = ""; // clear response
+        generateTable(table, tableData); // generate the table first
+        generateTableHead(table, Object.keys(tableData[0])); // then the head
+      });
+    }
+
+    function loadNext() {
+      const search = document.getElementById("search").value;
+      if (search.trim() === "") {
+        data = '[{\"Name\":\"*\"}]';
+      } else {
+        data = JSON.stringify([{ Name: search }]);
+      }
+      console.log(data);
+      fetch("https://module-registry-dj65tplq7a-uc.a.run.app/packages?offset=" + offset, {
+        method: "POST",
+        body: data,
+      }).then((resp) => {
+        if (resp.status === 400) {
+          document.getElementById("next").disabled = true;
+          let table = document.getElementById("modules");
+          table.innerHTML = ""; // clear table
+          let par = document.getElementById("search_response");
+          par.innerHTML = "No matches found"
+        }
+        else {
+          offset = resp.headers.get("offset");
+          if (offset === "") {
+            document.getElementById("next").disabled = true;
+          } else {
+            document.getElementById("next").disabled = false;
+          }
         }
         return resp.json();
       }).then((data) => {
