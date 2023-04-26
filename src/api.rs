@@ -13,7 +13,6 @@ use rocket::State;
 
 use rocket::tokio::fs;
 
-use std::fs;
 use std::io::Read;
 use std::path::Path;
 //#[cfg(test)]
@@ -53,7 +52,8 @@ pub async fn package_create(
         )
         .await
         {
-            let (name, version) = get_package_name("./temp_ece461.zip");
+            let name = get_package("./temp_ece461.zip", "name");
+            let version = get_package("./temp_ece461.zip", "version");
             let url = format!("https://www.npmjs.com/package/{:?}", name);
 
             if let Some(m) = Module::new(url).await {
@@ -71,7 +71,7 @@ pub async fn package_create(
                         .await
                         {
                             // insert to database
-                            mod_w.insert(m.id, m);
+                            mod_w.insert(m.id.clone(), m);
                             let mut res = mod_w.get(&m.id).unwrap();
                             res.ver = version.unwrap_or("0".to_string());
 
@@ -132,13 +132,14 @@ pub async fn package_create(
             if let Some(m) = Module::new(package.URL.clone().unwrap()).await {
                 // if the metric matches the expectations
                 if m.overall >= 0.5 {
-                    let (name, version) = get_package_name(&m.path);
+                    let name = get_package(&m.path, "name");
+                    let version = get_package(&m.path, "version");
                     drop(mod_r); // drop read lock before aquiring write lock
                     let mut mod_w = mod_db.write().await;
                     // if the package is not in the database
                     if !mod_w.contains_key(&m.id) {
                         // insert into hashmap
-                        mod_w.insert(m.id, m);
+                        mod_w.insert(m.id.clone(), m);
                         let mut res = mod_w.get(&m.id).unwrap();
                         res.ver = version.unwrap_or("0".to_string());
 
@@ -207,7 +208,7 @@ pub async fn package_create(
     }
 }
 
-fn get_package_name(path: &str) -> (Option<String>, Option<String>) {
+fn get_package(path: &str, attr: &str) -> Option<String> {
     // search for package.json in zip file
     let mut fp = zip::ZipArchive::new(std::fs::File::open(path).ok()?).ok()?;
     let name_re = regex::Regex::new(".+/package\\.json").unwrap();
@@ -219,10 +220,7 @@ fn get_package_name(path: &str) -> (Option<String>, Option<String>) {
     file.read_to_string(&mut content).ok()?;
     let data: rocket::figment::value::Value = rocket::serde::json::from_str(&content).ok()?;
 
-    (
-        data.find("name")?.into_string(),
-        data.find("version")?.into_string(),
-    )
+    data.find(attr)?.into_string()
 }
 
 #[put("/package/<id>", data = "<package>")]
@@ -265,12 +263,7 @@ pub async fn package_update(
                 // update moduledb
                 // weirdly layered to avoid overwritting the old file, then realizing that it
                 // doesn't match metrics requirement
-                if let Some(m) = Module::new(
-                    package.metadata.ID.clone(),
-                    package.data.URL.clone().unwrap(),
-                )
-                .await
-                {
+                if let Some(m) = Module::new(package.data.URL.clone().unwrap()).await {
                     // download package from main or master branch
                     println!("start downloading zip");
                     if cli::wget(
