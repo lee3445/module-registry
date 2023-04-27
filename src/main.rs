@@ -63,5 +63,6 @@ impl fairing::Fairing for Cors {
             "GET, POST, PUT, DELETE",
         ));
         response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
+        response.set_header(Header::new("Access-Control-Expose-Headers", "*"));
     }
 }
