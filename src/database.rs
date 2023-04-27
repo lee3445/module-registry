@@ -154,12 +154,9 @@ mod tests {
     // test Module
     #[rocket::async_test]
     async fn module_new() {
-        let res = Module::new(
-            "postcss".to_string(),
-            "https://www.npmjs.com/package/postcss".to_string(),
-        )
-        .await
-        .unwrap();
+        let res = Module::new("https://www.npmjs.com/package/postcss".to_string())
+            .await
+            .unwrap();
 
         assert_eq!(res.id, "postcss");
         assert!(res.responsive >= 0.0 && res.responsive <= 1.0);
@@ -167,7 +164,7 @@ mod tests {
 
     #[rocket::async_test]
     async fn module_new_bad() {
-        let res = Module::new("no".to_string(), "not a url".to_string()).await;
+        let res = Module::new("not a url".to_string()).await;
 
         assert!(res.is_none());
     }
