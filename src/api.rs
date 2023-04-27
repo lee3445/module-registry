@@ -88,28 +88,28 @@ pub async fn package_create(
                                 JSProgram: Some(String::new()),
                             };
                             let response = Package { metadata, data };
-                            fs::remove_file("./temp_ece461.zip");
+                            if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
                             return (Status::Created, Either::Left(Json(response)));
                         } else {
-                            fs::remove_file("./temp_ece461.zip");
+                            if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
                             return (
                                 Status::BadRequest,
                                 Either::Right("Failed to convert Content"),
                             );
                         }
                     } else {
-                        fs::remove_file("./temp_ece461.zip");
+                        if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
                         return (Status::BadRequest, Either::Right("Package exists already."));
                     }
                 } else {
-                    fs::remove_file("./temp_ece461.zip");
+                    if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
                     return (
                         Status::FailedDependency,
                         Either::Right("Package is not uploaded due to the disqualified rating."),
                     );
                 }
             } else {
-                fs::remove_file("./temp_ece461.zip");
+                if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
                 return (
                     Status::BadRequest,
                     Either::Right("Cannot create entry in database"),
@@ -134,7 +134,7 @@ pub async fn package_create(
             if let Some(mut m) = Module::new(package.URL.clone().unwrap()).await {
                 // if the metric matches the expectations
                 if m.overall >= 0.5 {
-                    let name = get_package(&m.path, "name");
+                    let _name = get_package(&m.path, "name");
                     let version = get_package(&m.path, "version");
                     drop(mod_r); // drop read lock before aquiring write lock
                     let mut mod_w = mod_db.write().await;
