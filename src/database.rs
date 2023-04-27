@@ -71,7 +71,7 @@ impl Module {
     // initialize struct
     pub async fn new(url: String) -> Option<Self> {
         let scores: cli::GithubRepo =
-            cli::rate(&url, "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").await?;
+            cli::rate(&url, &std::env::var("GITHUB_TOKEN").unwrap()).await?;
         if let Some((owner, repo)) = cli::extract_owner_and_repo(&url).await {
             Some(Self {
                 name: format!("{owner}_{repo}"),
