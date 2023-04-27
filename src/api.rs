@@ -29,8 +29,9 @@ pub async fn world() -> Option<NamedFile> {
 pub async fn test() -> &'static str {
     println!(
         "{:?}",
-        get_package_name(
-            "/home/albert/Documents/purdue/4sp/ECE461/module-registry/packages/postcss.zip"
+        get_package(
+            "/home/albert/Documents/purdue/4sp/ECE461/module-registry/packages/postcss.zip",
+            "name"
         )
     );
 
@@ -56,7 +57,7 @@ pub async fn package_create(
             let version = get_package("./temp_ece461.zip", "version");
             let url = format!("https://www.npmjs.com/package/{:?}", name);
 
-            if let Some(m) = Module::new(url).await {
+            if let Some(mut m) = Module::new(url).await {
                 // if the metric matches the expectations
                 if m.overall >= 0.5 {
                     // write entry in moduledb
@@ -71,9 +72,10 @@ pub async fn package_create(
                         .await
                         {
                             // insert to database
-                            mod_w.insert(m.id.clone(), m);
-                            let mut res = mod_w.get(&m.id).unwrap();
-                            res.ver = version.unwrap_or("0".to_string());
+                            m.ver = version.unwrap_or("0".to_string());
+                            mod_w.insert(m.id.clone(), m.clone());
+                            // let mut res = mod_w.get(&m.id).unwrap();
+                            // res.ver = version.unwrap_or("0".to_string());
 
                             let metadata = PackageMetadata {
                                 Name: m.name.clone(),
@@ -129,7 +131,7 @@ pub async fn package_create(
             // weirdly layered to avoid overwritting the old file, then realizing that it
             // doesn't match metrics requirement
 
-            if let Some(m) = Module::new(package.URL.clone().unwrap()).await {
+            if let Some(mut m) = Module::new(package.URL.clone().unwrap()).await {
                 // if the metric matches the expectations
                 if m.overall >= 0.5 {
                     let name = get_package(&m.path, "name");
@@ -139,9 +141,10 @@ pub async fn package_create(
                     // if the package is not in the database
                     if !mod_w.contains_key(&m.id) {
                         // insert into hashmap
-                        mod_w.insert(m.id.clone(), m);
-                        let mut res = mod_w.get(&m.id).unwrap();
-                        res.ver = version.unwrap_or("0".to_string());
+                        m.ver = version.unwrap_or("0".to_string());
+                        mod_w.insert(m.id.clone(), m.clone());
+                        // let mut res = mod_w.get(&m.id).unwrap();
+                        // res.ver = version.unwrap_or("0".to_string());
 
                         // download package from main or master branch
                         println!("start downloading zip");
