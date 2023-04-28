@@ -44,8 +44,6 @@ pub async fn package_create(
     package: Json<PackageData>,
     mod_db: &State<ModuleDB>,
 ) -> (Status, Either<Json<Package>, &'static str>) {
-    let mod_r = mod_db.read().await;
-
     // if Content field is set
     if package.Content != None && package.URL == None {
         if let Ok(_) = base64_to_zip(
@@ -67,7 +65,6 @@ pub async fn package_create(
                 // if the metric matches the expectations
                 if m.overall >= 0.5 {
                     // write entry in moduledb
-                    drop(mod_r); // drop read lock before aquiring write lock
                     let mut mod_w = mod_db.write().await;
                     // if not in the database then add it
                     if !mod_w.contains_key(&m.id) {
@@ -142,7 +139,6 @@ pub async fn package_create(
                 if m.overall >= 0.5 {
                     let _name = get_package(&m.path, "name");
                     let version = get_package(&m.path, "version");
-                    drop(mod_r); // drop read lock before aquiring write lock
                     let mut mod_w = mod_db.write().await;
                     // if the package is not in the database
                     if !mod_w.contains_key(&m.id) {
