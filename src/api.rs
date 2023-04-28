@@ -13,6 +13,7 @@ use rocket::State;
 
 use rocket::tokio::fs;
 
+use std::fmt::Write;
 use std::io::Read;
 use std::path::Path;
 //#[cfg(test)]
@@ -55,7 +56,12 @@ pub async fn package_create(
         {
             let name = get_package("./temp_ece461.zip", "name");
             let version = get_package("./temp_ece461.zip", "version");
-            let url = format!("https://www.npmjs.com/package/{:?}", name);
+            let mut url = "https://www.npmjs.com/package/".to_string();
+            // let url = format!("https://www.npmjs.com/package/{}", name);
+
+            if let Some(n) = name {
+                write!(url, "{}", n).unwrap();
+            }
 
             if let Some(mut m) = Module::new(url).await {
                 // if the metric matches the expectations
