@@ -29,6 +29,7 @@ async fn rocket() -> _ {
             routes![
                 world,
                 test,
+                package_create,
                 package_retrieve,
                 package_reset,
                 package_delete,

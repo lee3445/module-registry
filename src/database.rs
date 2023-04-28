@@ -1,6 +1,6 @@
 use rocket::tokio::sync::RwLock;
 use std::collections::HashMap;
-
+// use api
 pub type ModuleDB = RwLock<HashMap<String, Module>>;
 
 // create empty ModuleDB
@@ -13,12 +13,9 @@ pub async fn module_db() -> ModuleDB {
     let mut hm = HashMap::new();
     hm.insert(
         "postcss".to_string(),
-        Module::new(
-            "postcss".to_string(),
-            "https://www.npmjs.com/package/postcss".to_string(),
-        )
-        .await
-        .unwrap(),
+        Module::new("https://www.npmjs.com/package/postcss".to_string())
+            .await
+            .unwrap(),
     );
     hm.insert(
         "fake_module".to_string(),
@@ -47,7 +44,7 @@ pub async fn module_db() -> ModuleDB {
     RwLock::new(hm)
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Module {
     // name of module
     pub name: String,
@@ -72,24 +69,29 @@ pub struct Module {
 
 impl Module {
     // initialize struct
-    pub async fn new(id: String, url: String) -> Option<Self> {
-        let scores = cli::rate(&url, &std::env::var("GITHUB_TOKEN").unwrap()).await?;
-        let packageid = id.clone();
-        Some(Self {
-            id,
-            url,
-            path: format!("./packages/{packageid}.zip"),
-            overall: scores.overall() as f64,
-            bus: scores.bus() as f64,
-            correct: scores.correct() as f64,
-            license: scores.license() as f64,
-            responsive: scores.responsive() as f64,
-            rampup: scores.rampup() as f64,
-            version: scores.version() as f64,
-            review: scores.review() as f64,
+    pub async fn new(url: String) -> Option<Self> {
+        let scores: cli::GithubRepo =
+            cli::rate(&url, &std::env::var("GITHUB_TOKEN").unwrap()).await?;
+        if let Some((owner, repo)) = cli::extract_owner_and_repo(&url).await {
+            Some(Self {
+                name: format!("{owner}_{repo}"),
+                id: format!("{owner}_{repo}"),
+                url,
+                path: format!("./packages/{owner}_{repo}.zip"),
+                overall: scores.overall() as f64,
+                bus: scores.bus() as f64,
+                correct: scores.correct() as f64,
+                license: scores.license() as f64,
+                responsive: scores.responsive() as f64,
+                rampup: scores.rampup() as f64,
+                version: scores.version() as f64,
+                review: scores.review() as f64,
 
-            ..Default::default()
-        })
+                ..Default::default()
+            })
+        } else {
+            None
+        }
     }
 }
 
@@ -152,20 +154,17 @@ mod tests {
     // test Module
     #[rocket::async_test]
     async fn module_new() {
-        let res = Module::new(
-            "postcss".to_string(),
-            "https://www.npmjs.com/package/postcss".to_string(),
-        )
-        .await
-        .unwrap();
+        let res = Module::new("https://www.npmjs.com/package/postcss".to_string())
+            .await
+            .unwrap();
 
-        assert_eq!(res.id, "postcss");
+        assert_eq!(res.id, "postcss_postcss");
         assert!(res.responsive >= 0.0 && res.responsive <= 1.0);
     }
 
     #[rocket::async_test]
     async fn module_new_bad() {
-        let res = Module::new("no".to_string(), "not a url".to_string()).await;
+        let res = Module::new("not a url".to_string()).await;
 
         assert!(res.is_none());
     }
