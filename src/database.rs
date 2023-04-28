@@ -158,7 +158,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(res.id, "postcss");
+        assert_eq!(res.id, "postcss_postcss");
         assert!(res.responsive >= 0.0 && res.responsive <= 1.0);
     }
 
