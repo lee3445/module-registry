@@ -56,7 +56,7 @@ pub async fn package_create(
             // let url = format!("https://www.npmjs.com/package/{}", name);
             println!("pkg:{:?}", name);
 
-            if let Some(n) = name {
+            if let Some(ref n) = name {
                 write!(url, "{}", n).unwrap();
             }
 
@@ -75,6 +75,7 @@ pub async fn package_create(
                         {
                             // insert to database
                             m.ver = version.unwrap_or("0".to_string());
+                            m.name = name.unwrap_or("ERROR".to_string()).clone();
                             mod_w.insert(m.id.clone(), m.clone());
                             // let mut res = mod_w.get(&m.id).unwrap();
                             // res.ver = version.unwrap_or("0".to_string());
@@ -142,14 +143,10 @@ pub async fn package_create(
             if let Some(mut m) = Module::new(package.URL.clone().unwrap()).await {
                 // if the metric matches the expectations
                 if m.overall >= 0.5 {
-                    let _name = get_package(&m.path, "name");
-                    let version = get_package(&m.path, "version");
                     let mut mod_w = mod_db.write().await;
                     // if the package is not in the database
                     if !mod_w.contains_key(&m.id) {
                         // insert into hashmap
-                        m.ver = version.unwrap_or("0".to_string());
-                        mod_w.insert(m.id.clone(), m.clone());
                         // let mut res = mod_w.get(&m.id).unwrap();
                         // res.ver = version.unwrap_or("0".to_string());
 
@@ -181,6 +178,11 @@ pub async fn package_create(
                         }
                         println!("finish downloading zip");
 
+                        let name = get_package(&m.path, "name");
+                        let version = get_package(&m.path, "version");
+                        m.name = name.unwrap_or("ERROR".to_string()).clone();
+                        m.ver = version.unwrap_or("0".to_string());
+                        mod_w.insert(m.id.clone(), m.clone());
                         let metadata = PackageMetadata {
                             Name: m.name.clone(),
                             Version: m.ver.clone(),
@@ -236,6 +238,7 @@ fn get_package(path: &str, attr: &str) -> Option<String> {
     let data: rocket::figment::value::Value = rocket::serde::json::from_str(&content).ok()?;
 
     let res = data.find(attr)?;
+    println!("found {:?}", res);
     res.to_i128()
         .map(|a| a.to_string())
         .or_else(|| res.into_string())
