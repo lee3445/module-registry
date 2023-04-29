@@ -46,6 +46,7 @@ pub async fn package_create(
 ) -> (Status, Either<Json<Package>, &'static str>) {
     // if Content field is set
     if package.Content != None && package.URL == None {
+        println!("create with Content");
         if let Ok(_) = base64_to_zip(
             package.Content.as_ref().unwrap().as_str(),
             "./temp_ece461.zip",
@@ -56,6 +57,7 @@ pub async fn package_create(
             let version = get_package("./temp_ece461.zip", "version");
             let mut url = "https://www.npmjs.com/package/".to_string();
             // let url = format!("https://www.npmjs.com/package/{}", name);
+            println!("pkg:{:?}", name);
 
             if let Some(n) = name {
                 write!(url, "{}", n).unwrap();
@@ -94,6 +96,7 @@ pub async fn package_create(
                             if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
                             return (Status::Created, Either::Left(Json(response)));
                         } else {
+                            println!("read file fail");
                             if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
                             return (
                                 Status::BadRequest,
@@ -102,7 +105,7 @@ pub async fn package_create(
                         }
                     } else {
                         if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
-                        return (Status::BadRequest, Either::Right("Package exists already."));
+                        return (Status::Conflict, Either::Right("Package exists already."));
                     }
                 } else {
                     if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
@@ -112,6 +115,7 @@ pub async fn package_create(
                     );
                 }
             } else {
+                println!("new() fail");
                 if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
                 return (
                     Status::BadRequest,
@@ -119,6 +123,7 @@ pub async fn package_create(
                 );
             }
         } else {
+            println!("base64 fail");
             return (
                 Status::BadRequest,
                 Either::Right("Failed to convert Content"),
@@ -127,9 +132,11 @@ pub async fn package_create(
     }
     // if URL field is set
     else if package.Content == None && package.URL != None {
+        println!("create with url");
         if let Some((owner, repo)) =
             cli::extract_owner_and_repo(package.URL.as_ref().unwrap()).await
         {
+            println!("repo: {}/{}", owner, repo);
             // update moduledb
             // weirdly layered to avoid overwritting the old file, then realizing that it
             // doesn't match metrics requirement
@@ -170,6 +177,7 @@ pub async fn package_create(
                             .await
                             .is_none()
                             {
+                                println!("wget fail");
                                 return (Status::BadRequest, Either::Right("Bad Request"));
                             }
                         }
@@ -197,15 +205,18 @@ pub async fn package_create(
                     );
                 }
             } else {
+                println!("new() fail");
                 return (
                     Status::BadRequest,
                     Either::Right("Cannot create entry in database"),
                 );
             }
         } else {
+            println!("url extract fail");
             return (Status::BadRequest, Either::Right("Invalid URL"));
         }
     } else {
+        println!("json fail");
         (
             Status::BadRequest,
             Either::Right("Either Content or URL should be set."),
@@ -360,6 +371,7 @@ pub async fn packages_list(
 
     // check if offset is out of range
     if offset >= ret.len() {
+        println!("bad offset/no match");
         return Either::Right(status::BadRequest(Some("Offset out of range")));
     }
 
