@@ -152,6 +152,7 @@ pub async fn working() -> bool {
 
 pub async fn rate(url: &str, token: &str) -> Option<GithubRepo> {
     let (owner, repo) = extract_owner_and_repo(url).await?;
+    println!("repo in rate:{}/{}", owner, repo);
 
     // calculate metrics
     let scores = vec![-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0];
@@ -225,7 +226,7 @@ pub async fn extract_owner_and_repo(url: &str) -> Option<(String, String)> {
     } else {
         return None;
     }
-    let re = Regex::new(r".*github.com/([^/]+)/([^/]+)(\.git)?").unwrap();
+    let re = Regex::new(r".*github.com/([^/]+)/([^/^\.]+)(\.git)?").unwrap();
     let captures = re.captures(&ghurl)?;
 
     Some((captures[1].to_string(), captures[2].to_string()))
@@ -283,7 +284,7 @@ async fn calc_metrics(repository: &mut GithubRepo, token: String, owner: String,
     let mut issue_response_times =
         octo::get_issue_response_times(token.clone(), owner.clone(), repo.clone())
             .await
-            .unwrap();
+            .unwrap_or(vec![1.0, 1.0]);
     let mut responsive_score = calc_responsive_maintainer::calc_responsive_maintainer(
         issue_response_times[0],
         issue_response_times[1],
