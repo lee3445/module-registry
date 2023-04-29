@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 use rocket::serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
 pub struct PackageMetadata {
     pub Name: String,

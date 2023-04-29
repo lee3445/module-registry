@@ -89,6 +89,7 @@ pub async fn package_create(
                                 URL: None, //db.url.clone(),
                                 JSProgram: Some(String::new()),
                             };
+                            println!("{:?}", metadata);
                             let response = Package { metadata, data };
                             if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
                             return (Status::Created, Either::Left(Json(response)));
@@ -190,6 +191,7 @@ pub async fn package_create(
                             URL: None, //db.url.clone(),
                             JSProgram: Some(String::new()),
                         };
+                        println!("{:?}", metadata);
                         let response = Package { metadata, data };
                         return (Status::Created, Either::Left(Json(response)));
                     } else {
@@ -233,7 +235,10 @@ fn get_package(path: &str, attr: &str) -> Option<String> {
     file.read_to_string(&mut content).ok()?;
     let data: rocket::figment::value::Value = rocket::serde::json::from_str(&content).ok()?;
 
-    data.find(attr)?.into_string()
+    let res = data.find(attr)?;
+    res.to_i128()
+        .map(|a| a.to_string())
+        .or_else(|| res.into_string())
 }
 
 #[put("/package/<id>", data = "<package>")]
@@ -242,6 +247,7 @@ pub async fn package_update(
     package: Json<Package>,
     mod_db: &State<ModuleDB>,
 ) -> (Status, &'static str) {
+    println!("{:?}", package.metadata);
     let mod_r = mod_db.read().await;
     let res = mod_r.get(&id);
 
