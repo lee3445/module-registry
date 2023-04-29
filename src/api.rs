@@ -45,7 +45,7 @@ pub async fn package_create(
     mod_db: &State<ModuleDB>,
 ) -> (Status, Either<Json<Package>, &'static str>) {
     // if Content field is set
-    if package.Content != None && package.URL == None {
+    if package.Content != None {
         println!("create with Content");
         if let Ok(_) = base64_to_zip(
             package.Content.as_ref().unwrap().as_str(),

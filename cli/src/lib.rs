@@ -209,13 +209,14 @@ pub async fn extract_owner_and_repo(url: &str) -> Option<(String, String)> {
                 .and_then(|value| value.get("url"))
                 .and_then(|value| value.as_str())?;
 
-            // force scheme to https
-            let spl = giturl.split_once("://")?;
-            let giturl = "https://".to_owned() + spl.1;
+            // // force scheme to https
+            // let spl = giturl.split_once("://")?;
+            // let giturl = "https://".to_owned() + spl.1;
 
-            // Do not need to check if url contains git+, just do replace. That would take care of it
-            let derefurl = giturl.replace(".git", "");
-            ghurl = derefurl;
+            // // Do not need to check if url contains git+, just do replace. That would take care of it
+            // let derefurl = giturl.replace(".git", "");
+            // ghurl = derefurl;
+            ghurl = giturl.to_string();
         } else if domain != "github.com" {
             return None;
         } else {
@@ -224,7 +225,7 @@ pub async fn extract_owner_and_repo(url: &str) -> Option<(String, String)> {
     } else {
         return None;
     }
-    let re = Regex::new(r"https://github.com/([^/]+)/([^/]+)/?").unwrap();
+    let re = Regex::new(r".*github.com/([^/]+)/([^/]+)(\.git)?").unwrap();
     let captures = re.captures(&ghurl)?;
 
     Some((captures[1].to_string(), captures[2].to_string()))
