@@ -322,6 +322,7 @@ pub async fn package_update(
             )
         }
     } else {
+        println!("metadata fail");
         (Status::NotFound, "Package does not exist.")
     }
 }
@@ -338,6 +339,7 @@ pub async fn packages_list(
     query: Json<Vec<PackageQuery>>,
     mod_db: &State<ModuleDB>,
 ) -> Either<PackageListResponse, status::BadRequest<&'static str>> {
+    println!("{:?}", query);
     let mut ret = Vec::new();
     let query_vec = query.to_vec();
 
@@ -367,8 +369,12 @@ pub async fn packages_list(
     }
 
     // check if offset is out of range
+    if ret.is_empty() {
+        println!("no match");
+        return Either::Right(status::BadRequest(Some("No package matched by query")));
+    }
     if offset >= ret.len() {
-        println!("bad offset/no match");
+        println!("bad offset");
         return Either::Right(status::BadRequest(Some("Offset out of range")));
     }
 

@@ -38,7 +38,7 @@ pub struct PackageHistoryEntry {
     pub Action: String,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(crate = "rocket::serde")]
 pub struct PackageQuery {
     pub Version: Option<String>,
