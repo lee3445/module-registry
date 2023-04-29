@@ -30,10 +30,7 @@ pub async fn world() -> Option<NamedFile> {
 pub async fn test() -> &'static str {
     println!(
         "{:?}",
-        get_package(
-            "/home/albert/Documents/purdue/4sp/ECE461/module-registry/packages/postcss.zip",
-            "name"
-        )
+        Module::new("https://www.npmjs.com/package/fecha".to_string()).await
     );
 
     "cool"
@@ -216,7 +213,7 @@ pub async fn package_create(
             return (Status::BadRequest, Either::Right("Invalid URL"));
         }
     } else {
-        println!("json fail");
+        println!("json fail:{:?}", package);
         (
             Status::BadRequest,
             Either::Right("Either Content or URL should be set."),

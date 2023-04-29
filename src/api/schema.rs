@@ -58,7 +58,7 @@ pub struct Package {
     pub data: PackageData,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
 pub struct PackageData {
     pub Content: Option<String>,
