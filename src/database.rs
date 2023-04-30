@@ -4,45 +4,45 @@ use std::collections::HashMap;
 pub type ModuleDB = RwLock<HashMap<String, Module>>;
 
 // create empty ModuleDB
-// pub fn module_db() -> ModuleDB {
-//     RwLock::new(HashMap::new())
-// }
+pub async fn module_db() -> ModuleDB {
+    RwLock::new(HashMap::new())
+}
 //
 // this one has a default entry
-pub async fn module_db() -> ModuleDB {
-    let mut hm = HashMap::new();
-    hm.insert(
-        "postcss".to_string(),
-        Module::new("https://www.npmjs.com/package/postcss".to_string())
-            .await
-            .unwrap(),
-    );
-    hm.insert(
-        "fake_module".to_string(),
-        Module {
-            name: "fake module".to_string(),
-            id: "fake_module".to_string(),
-            ..Default::default()
-        },
-    );
-    hm.insert(
-        "fake_module_same_name".to_string(),
-        Module {
-            name: "fake module".to_string(),
-            id: "fake_module_same_name".to_string(),
-            ..Default::default()
-        },
-    );
-    hm.insert(
-        "fake_module_two".to_string(),
-        Module {
-            name: "fake module 2".to_string(),
-            id: "fake_module_two".to_string(),
-            ..Default::default()
-        },
-    );
-    RwLock::new(hm)
-}
+// pub async fn module_db() -> ModuleDB {
+//     let mut hm = HashMap::new();
+//     hm.insert(
+//         "postcss".to_string(),
+//         Module::new("https://www.npmjs.com/package/postcss".to_string())
+//             .await
+//             .unwrap(),
+//     );
+//     hm.insert(
+//         "fake_module".to_string(),
+//         Module {
+//             name: "fake module".to_string(),
+//             id: "fake_module".to_string(),
+//             ..Default::default()
+//         },
+//     );
+//     hm.insert(
+//         "fake_module_same_name".to_string(),
+//         Module {
+//             name: "fake module".to_string(),
+//             id: "fake_module_same_name".to_string(),
+//             ..Default::default()
+//         },
+//     );
+//     hm.insert(
+//         "fake_module_two".to_string(),
+//         Module {
+//             name: "fake module 2".to_string(),
+//             id: "fake_module_two".to_string(),
+//             ..Default::default()
+//         },
+//     );
+//     RwLock::new(hm)
+// }
 
 #[derive(Default, Debug, Clone)]
 pub struct Module {

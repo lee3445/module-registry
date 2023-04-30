@@ -30,10 +30,7 @@ pub async fn world() -> Option<NamedFile> {
 pub async fn test() -> &'static str {
     println!(
         "{:?}",
-        get_package(
-            "/home/albert/Documents/purdue/4sp/ECE461/module-registry/packages/postcss.zip",
-            "name"
-        )
+        Module::new("https://www.npmjs.com/package/fecha".to_string()).await
     );
 
     "cool"
@@ -45,7 +42,8 @@ pub async fn package_create(
     mod_db: &State<ModuleDB>,
 ) -> (Status, Either<Json<Package>, &'static str>) {
     // if Content field is set
-    if package.Content != None && package.URL == None {
+    if package.Content != None {
+        println!("create with Content");
         if let Ok(_) = base64_to_zip(
             package.Content.as_ref().unwrap().as_str(),
             "./temp_ece461.zip",
@@ -56,8 +54,9 @@ pub async fn package_create(
             let version = get_package("./temp_ece461.zip", "version");
             let mut url = "https://www.npmjs.com/package/".to_string();
             // let url = format!("https://www.npmjs.com/package/{}", name);
+            println!("pkg:{:?}", name);
 
-            if let Some(n) = name {
+            if let Some(ref n) = name {
                 write!(url, "{}", n).unwrap();
             }
 
@@ -76,6 +75,7 @@ pub async fn package_create(
                         {
                             // insert to database
                             m.ver = version.unwrap_or("0".to_string());
+                            m.name = name.unwrap_or("ERROR".to_string()).clone();
                             mod_w.insert(m.id.clone(), m.clone());
                             // let mut res = mod_w.get(&m.id).unwrap();
                             // res.ver = version.unwrap_or("0".to_string());
@@ -90,10 +90,12 @@ pub async fn package_create(
                                 URL: None, //db.url.clone(),
                                 JSProgram: Some(String::new()),
                             };
+                            println!("{:?}", metadata);
                             let response = Package { metadata, data };
                             if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
                             return (Status::Created, Either::Left(Json(response)));
                         } else {
+                            println!("read file fail");
                             if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
                             return (
                                 Status::BadRequest,
@@ -102,7 +104,7 @@ pub async fn package_create(
                         }
                     } else {
                         if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
-                        return (Status::BadRequest, Either::Right("Package exists already."));
+                        return (Status::Conflict, Either::Right("Package exists already."));
                     }
                 } else {
                     if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
@@ -112,6 +114,7 @@ pub async fn package_create(
                     );
                 }
             } else {
+                println!("new() fail");
                 if let Ok(_) = fs::remove_file("./temp_ece461.zip").await {}
                 return (
                     Status::BadRequest,
@@ -119,6 +122,7 @@ pub async fn package_create(
                 );
             }
         } else {
+            println!("base64 fail");
             return (
                 Status::BadRequest,
                 Either::Right("Failed to convert Content"),
@@ -127,9 +131,11 @@ pub async fn package_create(
     }
     // if URL field is set
     else if package.Content == None && package.URL != None {
+        println!("create with url");
         if let Some((owner, repo)) =
             cli::extract_owner_and_repo(package.URL.as_ref().unwrap()).await
         {
+            println!("repo: {}/{}", owner, repo);
             // update moduledb
             // weirdly layered to avoid overwritting the old file, then realizing that it
             // doesn't match metrics requirement
@@ -137,14 +143,10 @@ pub async fn package_create(
             if let Some(mut m) = Module::new(package.URL.clone().unwrap()).await {
                 // if the metric matches the expectations
                 if m.overall >= 0.5 {
-                    let _name = get_package(&m.path, "name");
-                    let version = get_package(&m.path, "version");
                     let mut mod_w = mod_db.write().await;
                     // if the package is not in the database
                     if !mod_w.contains_key(&m.id) {
                         // insert into hashmap
-                        m.ver = version.unwrap_or("0".to_string());
-                        mod_w.insert(m.id.clone(), m.clone());
                         // let mut res = mod_w.get(&m.id).unwrap();
                         // res.ver = version.unwrap_or("0".to_string());
 
@@ -170,11 +172,17 @@ pub async fn package_create(
                             .await
                             .is_none()
                             {
+                                println!("wget fail");
                                 return (Status::BadRequest, Either::Right("Bad Request"));
                             }
                         }
                         println!("finish downloading zip");
 
+                        let name = get_package(&m.path, "name");
+                        let version = get_package(&m.path, "version");
+                        m.name = name.unwrap_or("ERROR".to_string()).clone();
+                        m.ver = version.unwrap_or("0".to_string());
+                        mod_w.insert(m.id.clone(), m.clone());
                         let metadata = PackageMetadata {
                             Name: m.name.clone(),
                             Version: m.ver.clone(),
@@ -185,6 +193,7 @@ pub async fn package_create(
                             URL: None, //db.url.clone(),
                             JSProgram: Some(String::new()),
                         };
+                        println!("{:?}", metadata);
                         let response = Package { metadata, data };
                         return (Status::Created, Either::Left(Json(response)));
                     } else {
@@ -197,15 +206,18 @@ pub async fn package_create(
                     );
                 }
             } else {
+                println!("new() fail");
                 return (
                     Status::BadRequest,
                     Either::Right("Cannot create entry in database"),
                 );
             }
         } else {
+            println!("url extract fail");
             return (Status::BadRequest, Either::Right("Invalid URL"));
         }
     } else {
+        println!("json fail:{:?}", package);
         (
             Status::BadRequest,
             Either::Right("Either Content or URL should be set."),
@@ -225,7 +237,11 @@ fn get_package(path: &str, attr: &str) -> Option<String> {
     file.read_to_string(&mut content).ok()?;
     let data: rocket::figment::value::Value = rocket::serde::json::from_str(&content).ok()?;
 
-    data.find(attr)?.into_string()
+    let res = data.find(attr)?;
+    println!("found {:?}", res);
+    res.to_i128()
+        .map(|a| a.to_string())
+        .or_else(|| res.into_string())
 }
 
 #[put("/package/<id>", data = "<package>")]
@@ -234,6 +250,7 @@ pub async fn package_update(
     package: Json<Package>,
     mod_db: &State<ModuleDB>,
 ) -> (Status, &'static str) {
+    println!("{:?}", package.metadata);
     let mod_r = mod_db.read().await;
     let res = mod_r.get(&id);
 
@@ -314,6 +331,7 @@ pub async fn package_update(
             )
         }
     } else {
+        println!("metadata fail");
         (Status::NotFound, "Package does not exist.")
     }
 }
@@ -330,6 +348,7 @@ pub async fn packages_list(
     query: Json<Vec<PackageQuery>>,
     mod_db: &State<ModuleDB>,
 ) -> Either<PackageListResponse, status::BadRequest<&'static str>> {
+    println!("{:?}", query);
     let mut ret = Vec::new();
     let query_vec = query.to_vec();
 
@@ -359,7 +378,12 @@ pub async fn packages_list(
     }
 
     // check if offset is out of range
+    if ret.is_empty() {
+        println!("no match");
+        return Either::Right(status::BadRequest(Some("No package matched by query")));
+    }
     if offset >= ret.len() {
+        println!("bad offset");
         return Either::Right(status::BadRequest(Some("Offset out of range")));
     }
 
